@@ -13,7 +13,7 @@
     
     目錄結構範例：
     ```text
-    my-project/
+    new-lineart/
     ├── main.py
     ├── README.md
     └── checkpoint/          <-- 這裡
