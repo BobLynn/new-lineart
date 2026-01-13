@@ -10,3 +10,6 @@ checkpoint/
 *.pth
 *.h5
 *.pt
+
+# 暫時先忽略 download_model.py 腳本
+download_model.py
