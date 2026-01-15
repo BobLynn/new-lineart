@@ -1,6 +1,6 @@
 # new-lineart
 
-![Alt](streamline.png)
+![owl](streamline.png)
 
 ## 📦 模型下載與設定 (Model Setup)
 
