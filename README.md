@@ -1,4 +1,4 @@
-![Alt](streamline.0.png=300x)
+![Alt](streamline.png)
 
 ## 📦 模型下載與設定 (Model Setup)
 
