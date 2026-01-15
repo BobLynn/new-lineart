@@ -16,8 +16,8 @@
     new-lineart/
     ├── main.py
     ├── README.md
-    └── checkpoint/          <-- 這裡
-        └── sam3.pt   <-- 放在這裡
+    └── checkpoint/      <-- 這裡新增checkpoint資料夾
+        └── sam3.pt      <-- 將模型放在這裡
     ```
 
 4.  **執行專案**：
