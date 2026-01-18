@@ -3,6 +3,7 @@ import numpy as np
 import cv2
 from core.segmentation import SAM3Engine
 from core.tensor_solver import TensorFieldGenerator
+from core.renderer import StreamlineRenderer
 from utils.geometry import parse_gradio_sketch
 
 # --- 初始化 SAM 3 ---
@@ -102,9 +103,16 @@ def run_hypnotic_gen(drawing_dict, density, width, sharpness, state):
     # 這是關鍵：Solver 必須同時尊重 "用戶筆畫方向" 和 "SAM 3 分割邊界"
     tensor_field = solver.solve_field_with_mask(stroke_constraints, state.active_mask)
     
-    # 3. 生成流線 (Visualizer)
-    # ... (調用渲染器生成 SVG) ...
-    return final_svg_image
+    renderer = StreamlineRenderer(tensor_field, h, w)
+    final_image = renderer.render_image(
+        density=int(density),
+        line_width=width,
+        bg_image=None,
+        show_progress=True,
+        mask=state.active_mask,
+        taper_sharpness=sharpness,
+    )
+    return final_image
 
 # --- Layout ---
 with gr.Blocks(title="SAM 3 Hypnotic Art") as demo:

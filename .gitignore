@@ -13,3 +13,9 @@ checkpoint/
 
 # 暫時先忽略 download_model.py 腳本
 download_model.py
+
+# 忽略Python快取
+__pycache__/
+
+# 忽略 .vscode 資料夾
+.vscode/

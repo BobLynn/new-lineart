@@ -1,6 +1,7 @@
 # core/tensor_solver.py
 import numpy as np
 import scipy.sparse as sp
+import cv2
 from scipy.sparse.linalg import spsolve
 from typing import List, Tuple
 
@@ -86,3 +87,44 @@ class TensorFieldGenerator:
         t22_field = spsolve(A_csr, b_t22).reshape(self.h, self.w)
         
         return np.stack([t11_field, t12_field, t22_field], axis=-1)
+
+    def solve_field_with_mask(self, stroke_constraints: List[Tuple[int, int, float, float]], mask: np.ndarray):
+        """
+        Incorporates mask boundary constraints.
+        mask: Binary mask (uint8), 255 or 1 for foreground.
+        """
+        constraints = list(stroke_constraints)
+        
+        if mask is not None:
+            # 確保 Mask 是 uint8
+            if mask.dtype != np.uint8:
+                mask = mask.astype(np.uint8)
+                
+            # 提取邊緣
+            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+            
+            for contour in contours:
+                # 簡單平滑
+                # epsilon = 0.005 * cv2.arcLength(contour, True)
+                # approx = cv2.approxPolyDP(contour, epsilon, True)
+                
+                # 遍歷輪廓點，計算切向
+                pts = contour.squeeze()
+                if len(pts) < 3: continue
+                
+                for i in range(len(pts)):
+                    p_prev = pts[i-1]
+                    p_next = pts[(i+1) % len(pts)]
+                    
+                    p_curr = pts[i]
+                    x, y = p_curr[0], p_curr[1]
+                    
+                    # 切向量
+                    vx = p_next[0] - p_prev[0]
+                    vy = p_next[1] - p_prev[1]
+                    
+                    # 添加邊界約束 (每隔幾個點採樣一次，避免過度約束)
+                    if i % 2 == 0: 
+                        constraints.append((x, y, vx, vy))
+                        
+        return self.solve_field(constraints)
