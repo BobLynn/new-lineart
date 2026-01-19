@@ -1,6 +1,10 @@
 import gradio as gr
 import numpy as np
 import cv2
+import os
+import sys
+import pickle
+import subprocess
 from core.segmentation import SAM3Engine
 from core.tensor_solver import TensorFieldGenerator
 from core.renderer import StreamlineRenderer
@@ -15,12 +19,18 @@ class SessionState:
         self.active_mask = None     # 當前選中的區域 (Binary Mask)
         self.click_points = []
         self.click_labels = []
+        self.tensor_field = None    # 緩存的張量場
 
 def on_upload(image, state):
     state = SessionState()
     state.raw_image = image
     sam_engine.set_image(image)
     return image, state
+
+def clear_field_cache(state):
+    """當用戶修改繪圖時，清除緩存的張量場"""
+    state.tensor_field = None
+    return state
 
 def on_click(evt: gr.SelectData, state):
     """處理滑鼠點擊 -> SAM 3 推理"""
@@ -89,30 +99,70 @@ def prepare_drawing_canvas(state):
     
     return canvas_bg
 
-def run_hypnotic_gen(drawing_dict, density, width, sharpness, state):
+def update_preview(drawing_dict, density, width, sharpness, state):
     """
-    最終生成：結合 Mask 約束和手繪 Stroke 約束
+    預覽生成：檢查緩存，如果沒有則計算張量場，然後渲染。
     """
-    # 1. 提取用戶畫的紅線 (Strokes)
-    stroke_constraints = parse_gradio_sketch(state.raw_image, drawing_dict)
+    if state.raw_image is None or state.active_mask is None:
+        return None, state
+        
+    # 1. 檢查/計算張量場
+    if state.tensor_field is None:
+        print("Computing Tensor Field for Preview...")
+        stroke_constraints = parse_gradio_sketch(state.raw_image, drawing_dict)
+        h, w = state.raw_image.shape[:2]
+        solver = TensorFieldGenerator(h, w)
+        state.tensor_field = solver.solve_field_with_mask(stroke_constraints, state.active_mask)
     
-    # 2. 構建張量場 (傳入 Mask 避免流線跑出邊界)
+    # 2. 渲染
     h, w = state.raw_image.shape[:2]
-    solver = TensorFieldGenerator(h, w)
+    renderer = StreamlineRenderer(state.tensor_field, h, w)
     
-    # 這是關鍵：Solver 必須同時尊重 "用戶筆畫方向" 和 "SAM 3 分割邊界"
-    tensor_field = solver.solve_field_with_mask(stroke_constraints, state.active_mask)
-    
-    renderer = StreamlineRenderer(tensor_field, h, w)
-    final_image = renderer.render_image(
+    # 預覽生成
+    preview_image = renderer.render_image(
         density=int(density),
         line_width=width,
         bg_image=None,
-        show_progress=True,
+        show_progress=False,
         mask=state.active_mask,
         taper_sharpness=sharpness,
     )
-    return final_image
+    return preview_image, state
+
+def launch_interactive_tuner(state):
+    """
+    啟動 Pygame 互動視窗
+    """
+    if state.tensor_field is None:
+        return "Please generate a preview first (or wait for auto-generation)."
+    
+    # Save data
+    data = {
+        'tensor_field': state.tensor_field,
+        'mask': state.active_mask
+    }
+    
+    pkl_path = os.path.abspath("temp_preview.pkl")
+    with open(pkl_path, 'wb') as f:
+        pickle.dump(data, f)
+        
+    # Launch subprocess
+    script_path = os.path.join("core", "interactive_window.py")
+    if not os.path.exists(script_path):
+        return f"Error: {script_path} not found."
+        
+    # Run python
+    cmd = [sys.executable, script_path, pkl_path]
+    subprocess.Popen(cmd)
+    
+    return "Interactive Tuner Launched! Check your taskbar."
+
+def run_hypnotic_gen(drawing_dict, density, width, sharpness, state):
+    """
+    最終生成
+    """
+    img, state = update_preview(drawing_dict, density, width, sharpness, state)
+    return img, state
 
 # --- Layout ---
 with gr.Blocks(title="SAM 3 Hypnotic Art") as demo:
@@ -131,11 +181,18 @@ with gr.Blocks(title="SAM 3 Hypnotic Art") as demo:
         gr.Markdown("Draw red lines to guide the flow direction.")
         drawing_board = gr.ImageEditor(label="Draw Strokes", type="numpy")
         
-    with gr.Tab("Step 3: Result"):
+    with gr.Tab("Step 3: Preview & Tune"):
         with gr.Row():
             density_slider = gr.Slider(5, 50, value=20, label="Spacing Density")
             width_slider = gr.Slider(1, 10, value=2, label="Base Width")
             sharp_slider = gr.Slider(0, 1, value=0.5, label="Tapering Sharpness")
+        
+        btn_refresh_preview = gr.Button("Refresh Preview", variant="secondary")
+        btn_interactive = gr.Button("Launch Interactive Tuner (Pygame)", variant="primary")
+        status_msg = gr.Textbox(label="Status", interactive=False)
+        preview_view = gr.Image(label="Lineart Preview", interactive=False)
+        
+    with gr.Tab("Step 4: Result"):
         gen_btn = gr.Button("Hypnotize!", variant="stop")
         result_view = gr.Image()
         
@@ -146,9 +203,27 @@ with gr.Blocks(title="SAM 3 Hypnotic Art") as demo:
     
     confirm_btn.click(prepare_drawing_canvas, inputs=[state], outputs=[drawing_board])
     
+    # 當繪圖改變時，清除緩存
+    drawing_board.change(clear_field_cache, inputs=[state], outputs=[state])
+    
+    # Preview Tab Events
+    slider_inputs = [drawing_board, density_slider, width_slider, sharp_slider, state]
+    
+    # 滑桿實時更新
+    density_slider.change(update_preview, inputs=slider_inputs, outputs=[preview_view, state])
+    width_slider.change(update_preview, inputs=slider_inputs, outputs=[preview_view, state])
+    sharp_slider.change(update_preview, inputs=slider_inputs, outputs=[preview_view, state])
+    
+    # 手動刷新按鈕
+    btn_refresh_preview.click(update_preview, inputs=slider_inputs, outputs=[preview_view, state])
+    
+    # 啟動 Pygame
+    btn_interactive.click(launch_interactive_tuner, inputs=[state], outputs=[status_msg])
+    
+    # 最終生成
     gen_btn.click(run_hypnotic_gen, 
-                 inputs=[drawing_board, density_slider, width_slider, sharp_slider, state],
-                 outputs=[result_view])
+                 inputs=slider_inputs,
+                 outputs=[result_view, state])
 
 if __name__ == "__main__":
     demo.launch()
