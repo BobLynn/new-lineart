@@ -4,6 +4,7 @@ import cv2
 import os
 import sys
 import pickle
+import json
 import subprocess
 from core.segmentation import SAM3Engine
 from core.tensor_solver import TensorFieldGenerator
@@ -20,6 +21,8 @@ class SessionState:
         self.click_points = []
         self.click_labels = []
         self.tensor_field = None    # 緩存的張量場
+        self.cached_lines = None    # 緩存的線條 (Smoothed)
+        self.last_density = None    # 上一次渲染的密度
 
 def on_upload(image, state):
     state = SessionState()
@@ -30,6 +33,8 @@ def on_upload(image, state):
 def clear_field_cache(state):
     """當用戶修改繪圖時，清除緩存的張量場"""
     state.tensor_field = None
+    state.cached_lines = None
+    state.last_density = None
     return state
 
 def on_click(evt: gr.SelectData, state):
@@ -43,6 +48,11 @@ def on_click(evt: gr.SelectData, state):
     # SAM 3 推理
     mask = sam_engine.predict_click(state.click_points, state.click_labels)
     state.active_mask = mask
+    
+    # Mask changed, clear cache
+    state.tensor_field = None
+    state.cached_lines = None
+    state.last_density = None
     
     # 視覺化：Overlay 紅色遮罩
     overlay = state.raw_image.copy()
@@ -71,6 +81,11 @@ def on_text_prompt(text, state):
     mask = sam_engine.predict_text(text) # SAM 3 feature
     state.active_mask = mask
     
+    # Mask changed, clear cache
+    state.tensor_field = None
+    state.cached_lines = None
+    state.last_density = None
+
     # 視覺化：Overlay 紅色遮罩
     overlay = state.raw_image.copy()
     
@@ -118,14 +133,34 @@ def update_preview(drawing_dict, density, width, sharpness, state):
     h, w = state.raw_image.shape[:2]
     renderer = StreamlineRenderer(state.tensor_field, h, w)
     
+    # Check cache
+    need_new_lines = True
+    if state.cached_lines is not None and state.last_density is not None:
+        if abs(state.last_density - density) < 0.1:
+            need_new_lines = False
+            
+    if need_new_lines:
+        print(f"Generating new streamlines (Density: {density})...")
+        # Ensure renderer uses correct mask
+        renderer.mask = state.active_mask
+        
+        auto_min_len = int(max(15, density * 1.5))
+        raw_lines = renderer.generate_streamlines(density, min_len=auto_min_len, show_progress=False)
+        
+        smoothed_lines = []
+        for l in raw_lines:
+            smoothed_lines.append(renderer.smooth_line(l))
+            
+        state.cached_lines = smoothed_lines
+        state.last_density = density
+    else:
+        print("Using cached streamlines for preview...")
+
     # 預覽生成
-    preview_image = renderer.render_image(
-        density=int(density),
+    preview_image = renderer.render_from_lines(
+        state.cached_lines,
         line_width=width,
-        bg_image=None,
-        show_progress=False,
-        mask=state.active_mask,
-        taper_sharpness=sharpness,
+        taper_sharpness=sharpness
     )
     return preview_image, state
 
@@ -156,6 +191,28 @@ def launch_interactive_tuner(state):
     subprocess.Popen(cmd)
     
     return "Interactive Tuner Launched! Check your taskbar."
+
+def load_tuner_params(state):
+    """
+    從 tuner_params.json 讀取參數並返回給滑桿
+    """
+    json_path = os.path.abspath("tuner_params.json")
+    if not os.path.exists(json_path):
+        # Return current values or defaults if file not found
+        # Gradio updates: (density, width, sharpness, status)
+        return gr.update(), gr.update(), gr.update(), "Error: No saved parameters found. Click 'Save to Web UI' in the Tuner first."
+    
+    try:
+        with open(json_path, 'r') as f:
+            params = json.load(f)
+        
+        d = params.get("density", 20)
+        w = params.get("width", 2)
+        s = params.get("sharpness", 0.5)
+        
+        return d, w, s, f"Loaded parameters: D={d}, W={w}, S={s}"
+    except Exception as e:
+        return gr.update(), gr.update(), gr.update(), f"Error loading parameters: {e}"
 
 def run_hypnotic_gen(drawing_dict, density, width, sharpness, state):
     """
@@ -198,6 +255,7 @@ with gr.Blocks(title="SAM 3 Hypnotic Art", css=css) as demo:
         
         btn_refresh_preview = gr.Button("Refresh Preview", variant="secondary")
         btn_interactive = gr.Button("Launch Interactive Tuner (Pygame)", variant="primary")
+        btn_sync = gr.Button("Sync Parameters from Tuner", variant="secondary") # New Button
         status_msg = gr.Textbox(label="Status", interactive=False)
         preview_view = gr.Image(label="Lineart Preview", interactive=False)
         
@@ -229,8 +287,11 @@ with gr.Blocks(title="SAM 3 Hypnotic Art", css=css) as demo:
     # 啟動 Pygame
     btn_interactive.click(launch_interactive_tuner, inputs=[state], outputs=[status_msg])
     
+    # 同步參數
+    btn_sync.click(load_tuner_params, inputs=[state], outputs=[density_slider, width_slider, sharp_slider, status_msg])
+
     # 最終生成
-    gen_btn.click(run_hypnotic_gen, 
+    gen_btn.click(run_hypnotic_gen,  
                  inputs=slider_inputs,
                  outputs=[result_view, state])
 

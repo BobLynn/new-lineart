@@ -4,6 +4,7 @@ import sys
 import numpy as np
 import cv2
 import os
+import json
 
 # Add project root to path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -16,6 +17,33 @@ WHITE = (255, 255, 255)
 GRAY = (100, 100, 100)
 RED = (255, 50, 50)
 GREEN = (50, 255, 50)
+BLUE = (50, 100, 255)
+BLUE_HOVER = (80, 130, 255)
+
+class Button:
+    def __init__(self, x, y, w, h, text, callback):
+        self.rect = pygame.Rect(x, y, w, h)
+        self.text = text
+        self.callback = callback
+        self.hovered = False
+
+    def handle_event(self, event):
+        if event.type == pygame.MOUSEMOTION:
+            self.hovered = self.rect.collidepoint(event.pos)
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if self.hovered:
+                self.callback()
+                return True
+        return False
+
+    def draw(self, screen, font):
+        color = BLUE_HOVER if self.hovered else BLUE
+        pygame.draw.rect(screen, color, self.rect, border_radius=6)
+        pygame.draw.rect(screen, WHITE, self.rect, width=2, border_radius=6)
+        
+        text_surf = font.render(self.text, True, WHITE)
+        text_rect = text_surf.get_rect(center=self.rect.center)
+        screen.blit(text_surf, text_rect)
 
 class Slider:
     def __init__(self, x, y, w, h, min_val, max_val, initial_val, label):
@@ -91,20 +119,47 @@ def main():
     
     # Init Pygame
     pygame.init()
-    screen_w, screen_h = w, h + 150 # Extra space for UI
+    
+    CTRL_PANEL_WIDTH = 300
+    screen_w = w + CTRL_PANEL_WIDTH
+    screen_h = max(h, 400) # Ensure enough height for controls
+    
     screen = pygame.display.set_mode((screen_w, screen_h))
     pygame.display.set_caption("Lineart Real-time Tuner (Pygame)")
     font = pygame.font.SysFont("Arial", 16)
     
-    # Sliders
+    # Sliders (Left Panel, Vertical Layout)
     # Density: 5 to 50
     # Width: 1 to 10
     # Sharpness: 0.0 to 1.0
+    
+    slider_x = 30
+    slider_w = CTRL_PANEL_WIDTH - 60
+    start_y = 50
+    gap_y = 80
+    
     sliders = [
-        Slider(20, h + 30, 200, 10, 5, 50, 20, "Density"),
-        Slider(250, h + 30, 200, 10, 1, 10, 2, "Width"),
-        Slider(480, h + 30, 200, 10, 0.0, 1.0, 0.5, "Sharpness")
+        Slider(slider_x, start_y, slider_w, 10, 5, 50, 20, "Density"),
+        Slider(slider_x, start_y + gap_y, slider_w, 10, 1, 10, 2, "Width"),
+        Slider(slider_x, start_y + gap_y * 2, slider_w, 10, 0.0, 1.0, 0.5, "Sharpness")
     ]
+    
+    # Buttons
+    def save_params():
+        params = {
+            "density": float(sliders[0].val),
+            "width": float(sliders[1].val),
+            "sharpness": float(sliders[2].val)
+        }
+        json_path = os.path.abspath("tuner_params.json")
+        try:
+            with open(json_path, 'w') as f:
+                json.dump(params, f, indent=4)
+            print(f"Parameters saved to {json_path}")
+        except Exception as e:
+            print(f"Error saving parameters: {e}")
+
+    save_btn = Button(slider_x, start_y + gap_y * 3 + 20, slider_w, 40, "Save to Web UI", save_params)
     
     clock = pygame.time.Clock()
     running = True
@@ -181,6 +236,8 @@ def main():
             
             for s in sliders:
                 s.handle_event(event)
+            
+            save_btn.handle_event(event)
         
         # Check if we need update (Only on Release)
         if mouse_released:
@@ -197,11 +254,19 @@ def main():
         
         # Draw Artwork
         if art_surface:
-            screen.blit(art_surface, (0, 0))
+            # Center vertically if canvas is smaller than screen
+            art_y = (screen_h - h) // 2 if h < screen_h else 0
+            screen.blit(art_surface, (CTRL_PANEL_WIDTH, art_y))
+        
+        # Draw Separator Line
+        pygame.draw.line(screen, (80, 80, 80), (CTRL_PANEL_WIDTH, 0), (CTRL_PANEL_WIDTH, screen_h), 2)
         
         # Draw Sliders
         for s in sliders:
             s.draw(screen, font)
+        
+        # Draw Button
+        save_btn.draw(screen, font)
             
         pygame.display.flip()
         clock.tick(30) # 30 FPS cap

@@ -318,34 +318,15 @@ class StreamlineRenderer:
             
         return lines
 
-    def render_image(self, density=20, line_width=2, bg_image=None, show_progress=False, mask=None, taper_sharpness=0.0):
-        self.mask = None
-        if isinstance(mask, np.ndarray):
-            if mask.shape[:2] == (self.h, self.w):
-                if mask.dtype != np.uint8:
-                    mask = mask.astype(np.uint8)
-                self.mask = mask
-        canvas = np.zeros((self.h, self.w, 3), dtype=np.uint8)
+    def render_from_lines(self, lines, line_width, taper_sharpness, canvas=None):
+        """
+        Render already computed (and smoothed) lines onto a canvas.
+        """
+        if canvas is None:
+            canvas = np.zeros((self.h, self.w, 3), dtype=np.uint8)
         
-        # Use new generation method
-        # Note: generate_streamlines handles seeds, mask, and progress
-        # But we need to pass show_progress
-        
-        # Min length should be proportional to density to avoid "debris"
-        # If a line is shorter than 1.5x spacing, it's likely a fragment between two other lines.
-        # By rejecting it, we leave the space open for a potentially better seed that connects the gap.
-        auto_min_len = int(max(15, density * 1.5))
-        
-        raw_lines = self.generate_streamlines(density, min_len=auto_min_len, show_progress=show_progress)
-        
-        if show_progress and tqdm is not None:
-             iterator = tqdm(raw_lines, desc="Rendering lines", leave=True)
-        else:
-             iterator = raw_lines
-
-        for line_pts in iterator:
-            # Smooth the line using Spline
-            line_pts = self.smooth_line(line_pts)
+        for line_pts in lines:
+            if len(line_pts) < 2: continue
             
             pts = np.array(line_pts, np.float32)
             if taper_sharpness <= 0:
@@ -361,5 +342,34 @@ class StreamlineRenderer:
             else:
                 # Use Ribbon Rendering for Tapered Lines
                 self.draw_tapered_line(canvas, line_pts, line_width, taper_sharpness)
-        
         return canvas
+
+    def render_image(self, density=20, line_width=2, bg_image=None, show_progress=False, mask=None, taper_sharpness=0.0):
+        self.mask = None
+        if isinstance(mask, np.ndarray):
+            if mask.shape[:2] == (self.h, self.w):
+                if mask.dtype != np.uint8:
+                    mask = mask.astype(np.uint8)
+                self.mask = mask
+        
+        # Use new generation method
+        # Note: generate_streamlines handles seeds, mask, and progress
+        # But we need to pass show_progress
+        
+        # Min length should be proportional to density to avoid "debris"
+        # If a line is shorter than 1.5x spacing, it's likely a fragment between two other lines.
+        # By rejecting it, we leave the space open for a potentially better seed that connects the gap.
+        auto_min_len = int(max(15, density * 1.5))
+        
+        raw_lines = self.generate_streamlines(density, min_len=auto_min_len, show_progress=show_progress)
+        
+        smoothed_lines = []
+        iterator = raw_lines
+        if show_progress and tqdm is not None:
+             iterator = tqdm(raw_lines, desc="Rendering lines", leave=True)
+        
+        for line_pts in iterator:
+            # Smooth the line using Spline
+            smoothed_lines.append(self.smooth_line(line_pts))
+            
+        return self.render_from_lines(smoothed_lines, line_width, taper_sharpness)

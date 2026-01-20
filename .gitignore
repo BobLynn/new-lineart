@@ -20,9 +20,10 @@ __pycache__/
 # 忽略 .vscode 資料夾
 .vscode/
 
-# 忽略 temp_preview.pkl
-
 # 忽略 Gradio 緩存
 .gradio/
 flagged/
+
+# 忽略一些指標檔案
 temp_preview.pkl
+tuner_params.json
