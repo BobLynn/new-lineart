@@ -21,4 +21,8 @@ __pycache__/
 .vscode/
 
 # 忽略 temp_preview.pkl
+
+# 忽略 Gradio 緩存
+.gradio/
+flagged/
 temp_preview.pkl

@@ -165,7 +165,16 @@ def run_hypnotic_gen(drawing_dict, density, width, sharpness, state):
     return img, state
 
 # --- Layout ---
-with gr.Blocks(title="SAM 3 Hypnotic Art") as demo:
+css = """
+#drawing-board {
+    height: 80vh !important;
+    max-height: 80vh !important;
+}
+.gradio-container {
+    max_width: 100% !important;
+}
+"""
+with gr.Blocks(title="SAM 3 Hypnotic Art", css=css) as demo:
     state = gr.State(SessionState())
     
     with gr.Tab("Step 1: Segment (SAM 3)"):
@@ -179,7 +188,7 @@ with gr.Blocks(title="SAM 3 Hypnotic Art") as demo:
 
     with gr.Tab("Step 2: Draw Flow"):
         gr.Markdown("Draw red lines to guide the flow direction.")
-        drawing_board = gr.ImageEditor(label="Draw Strokes", type="numpy")
+        drawing_board = gr.ImageEditor(label="Draw Strokes", type="numpy", elem_id="drawing-board")
         
     with gr.Tab("Step 3: Preview & Tune"):
         with gr.Row():
