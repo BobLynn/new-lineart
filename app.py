@@ -37,13 +37,43 @@ def clear_field_cache(state):
     state.last_density = None
     return state
 
-def on_click(evt: gr.SelectData, state):
+def draw_overlay(image, mask, points=None, labels=None):
+    if image is None: return None
+    overlay = image.copy()
+    
+    if mask is not None:
+        colored_mask = np.zeros_like(overlay)
+        colored_mask[:,:,0] = 255 # Red
+        
+        # Alpha blending
+        mask_bool = mask > 0
+        if np.any(mask_bool): # Ensure there is something to blend
+             overlay[mask_bool] = cv2.addWeighted(overlay[mask_bool], 0.6, colored_mask[mask_bool], 0.4, 0)
+        
+    if points and labels:
+        for p, l in zip(points, labels):
+            # Positive (1) = Green (0, 255, 0)
+            # Negative (0) = Blue (255, 0, 0) in BGR (since overlay is BGR/RGB? Gradio uses RGB mostly if type=numpy)
+            # Gradio Image type="numpy" returns RGB usually.
+            # Let's assume RGB.
+            # Green: (0, 255, 0)
+            # Red: (255, 0, 0)
+            color = (0, 255, 0) if l == 1 else (255, 0, 0)
+            cv2.circle(overlay, tuple(p), 5, color, -1)
+            cv2.circle(overlay, tuple(p), 6, (255, 255, 255), 1) # White border
+            
+    return overlay
+
+def on_click(point_mode, state, evt: gr.SelectData):
     """處理滑鼠點擊 -> SAM 3 推理"""
     if state.raw_image is None: return None, state
     
-    # 記錄點擊 (左鍵=1, 前景)
+    # 記錄點擊
+    # point_mode: "Add Area (+)" or "Remove Area (-)"
+    label = 1 if "Add" in point_mode else 0
+    
     state.click_points.append([evt.index[0], evt.index[1]])
-    state.click_labels.append(1)
+    state.click_labels.append(label)
     
     # SAM 3 推理
     mask = sam_engine.predict_click(state.click_points, state.click_labels)
@@ -54,25 +84,45 @@ def on_click(evt: gr.SelectData, state):
     state.cached_lines = None
     state.last_density = None
     
-    # 視覺化：Overlay 紅色遮罩
-    overlay = state.raw_image.copy()
-    
-    if mask is not None:
-        colored_mask = np.zeros_like(overlay)
-        colored_mask[:,:,0] = 255 # Red
-        
-        # Alpha blending
-        mask_bool = mask > 0
-        overlay[mask_bool] = cv2.addWeighted(overlay[mask_bool], 0.6, colored_mask[mask_bool], 0.4, 0)
-    else:
-        # 如果推理失敗 (可能是沒模型)，顯示提示或原圖
-        pass # 這裡可以加一些警告文字在圖上，但目前先保持原圖
-    
-    # 畫出點擊點
-    for p in state.click_points:
-        cv2.circle(overlay, tuple(p), 5, (0, 255, 0), -1)
+    # 視覺化
+    overlay = draw_overlay(state.raw_image, mask, state.click_points, state.click_labels)
         
     return overlay, state
+
+def undo_last_point(state):
+    if not state.click_points: return state.raw_image, state
+    
+    state.click_points.pop()
+    state.click_labels.pop()
+    
+    if not state.click_points:
+        state.active_mask = None
+        # Clear cache
+        state.tensor_field = None
+        state.cached_lines = None
+        state.last_density = None
+        return state.raw_image, state
+        
+    # Re-predict
+    mask = sam_engine.predict_click(state.click_points, state.click_labels)
+    state.active_mask = mask
+    
+    # Mask changed, clear cache
+    state.tensor_field = None
+    state.cached_lines = None
+    state.last_density = None
+    
+    overlay = draw_overlay(state.raw_image, mask, state.click_points, state.click_labels)
+    return overlay, state
+
+def clear_all_points(state):
+    state.click_points = []
+    state.click_labels = []
+    state.active_mask = None
+    state.tensor_field = None
+    state.cached_lines = None
+    state.last_density = None
+    return state.raw_image, state
 
 def on_text_prompt(text, state):
     """處理文字輸入 -> SAM 3 推理 (適合選取複雜紋理區域)"""
@@ -90,6 +140,38 @@ def on_text_prompt(text, state):
     overlay = state.raw_image.copy()
     
     if mask is not None:
+        # 如果 Mask 覆蓋了大部分區域 (例如 > 90%)，且有點擊點是 Positive 的
+        # 那麼這可能是一個反向 Mask (選到了背景)
+        # 這裡做一個簡單的自動修正嘗試：如果 Mask 面積過大，且有點擊點在 Mask 內，
+        # 我們可能不需要反轉。但如果 Mask 是 "除了物體以外都是白色"，那就是反了。
+        
+        # 觀察圖示，Mask 是紅色的區域 (值=255)。
+        # 如果用戶點的是黃色馬頭，結果紅色遮罩蓋住了背景（黑色區域），
+        # 這意味著 mask == 255 的地方是背景。
+        # 但我們需要的是 mask == 255 的地方是物體。
+        
+        # 檢查 Positive 點是否在 Mask 內
+        # 如果大部分 Positive 點都在 Mask=0 的區域，那 Mask 肯定是反了
+        
+        # 確保 points 和 labels 有定義 (從 state 中獲取)
+        points = state.click_points
+        labels = state.click_labels
+        
+        pos_points = [p for p, l in zip(points, labels) if l == 1]
+        if pos_points:
+            score = 0
+            for p in pos_points:
+                # p is (x, y)
+                # mask is (h, w) -> mask[y, x]
+                if mask[p[1], p[0]] > 0:
+                    score += 1
+            
+            # 如果超過一半的正樣本點都沒有被 Mask 覆蓋 (score < len/2)
+            # 那麼這個 Mask 很可能是反的 (Inverted)
+            if score < len(pos_points) / 2:
+                print("Auto-inverting mask based on point feedback...")
+                mask = cv2.bitwise_not(mask)
+
         colored_mask = np.zeros_like(overlay)
         colored_mask[:,:,0] = 255 # Red
         
@@ -240,6 +322,11 @@ with gr.Blocks(title="SAM 3 Hypnotic Art", css=css) as demo:
             seg_preview = gr.Image(label="Segmentation Preview", interactive=False)
         
         with gr.Row():
+            point_type = gr.Radio(["Add Area (+)", "Remove Area (-)"], value="Add Area (+)", label="Point Type")
+            btn_undo = gr.Button("Undo Last Point")
+            btn_clear = gr.Button("Clear All Points")
+
+        with gr.Row():
             text_prompt = gr.Textbox(label="Text Prompt (Optional)", placeholder="e.g., 'cat eyes'")
             confirm_btn = gr.Button("Confirm Region & Next", variant="primary")
 
@@ -265,7 +352,11 @@ with gr.Blocks(title="SAM 3 Hypnotic Art", css=css) as demo:
         
     # Events
     input_img.upload(on_upload, [input_img, state], [input_img, state])
-    input_img.select(on_click, [state], [seg_preview, state]) # 修正: select 傳遞的是 evt
+    input_img.select(on_click, [point_type, state], [seg_preview, state]) # Pass point_type
+    
+    btn_undo.click(undo_last_point, [state], [seg_preview, state])
+    btn_clear.click(clear_all_points, [state], [seg_preview, state])
+    
     text_prompt.submit(on_text_prompt, [text_prompt, state], [seg_preview, state])
     
     confirm_btn.click(prepare_drawing_canvas, inputs=[state], outputs=[drawing_board])

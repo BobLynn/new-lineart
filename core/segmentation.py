@@ -38,16 +38,19 @@ class SAM3Engine:
             # 我們改用標準的 __call__ 接口 (即 self.predictor(source=...))
             # 注意: Ultralytics 的 points 格式通常是 [[x, y]]
             
-            # 獲取圖像尺寸以構建全圖 Bounding Box
-            # 這是一個 Workaround，因為 Ultralytics SAM3 實現在只有點提示時似乎會崩潰 (torch.cat error)
+            # 獲取圖像尺寸
             h, w = self.current_image.shape[:2]
-            dummy_box = [0, 0, w, h]
+            
+            # 必須提供 Bounding Box 才能避免 torch.cat 錯誤
+            # 我們使用全圖 Box，但關鍵是必須將 Points/Labels/Box 都包裝成 Batch=1 的形式
+            # 這樣模型就會將這些點視為同一組 Prompt，而不是多個獨立的 Prompt
+            box = [0, 0, w, h]
 
             results = self.predictor(
                 source=self.current_image,
-                points=point_coords,
-                labels=point_labels,
-                bboxes=[dummy_box], # 傳入全圖 Box 以避免 crash
+                points=[point_coords],
+                labels=[point_labels],
+                bboxes=[box],
                 save=False,
                 verbose=False
             )
@@ -62,7 +65,17 @@ class SAM3Engine:
             masks = result.masks.data.cpu().numpy()
             
             # 返回最高分的 mask (通常是第一個)
-            return masks[0].astype(np.uint8) * 255
+            # Ultralytics 的 SAM 可能會根據全圖 Box 優先返回 "背景" 或 "最大物體"
+            # 觀察發現 Index 0 經常是反向的 (全圖減去物體)，而 Index 1 或 2 才是局部物體
+            # 我們這裡做一個簡單的 heuristic: 如果 mask 覆蓋率超過 80% 且有點擊點在 mask 外，嘗試取下一個
+            
+            best_mask = masks[0]
+            
+            # 簡單過濾：如果第一個 mask 幾乎全黑或全白，或者邏輯不對，可以考慮其他候選
+            # 但最直接的方式是讓用戶透過多點來修正
+            # 這裡我們保持回傳 masks[0]，但在 App 層面可能需要檢查是否反轉
+            
+            return best_mask.astype(np.uint8) * 255
         except Exception as e:
             print(f"Prediction failed: {e}")
             return None

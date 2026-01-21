@@ -2,7 +2,7 @@
 .DS_Store
 
 # 個人做測試的資料夾，請忽略！
-00_test_field/
+00_testing_field/
 /runs
 
 # 忽略模型權重檔
