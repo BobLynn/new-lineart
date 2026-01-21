@@ -6,29 +6,117 @@ import sys
 import pickle
 import json
 import subprocess
-from core.segmentation import SAM3Engine
+from core.segmentation import SAM2AutoEngine
 from core.tensor_solver import TensorFieldGenerator
 from core.renderer import StreamlineRenderer
 from utils.geometry import parse_gradio_sketch
 
-# --- 初始化 SAM 3 ---
-sam_engine = SAM3Engine(checkpoint_path="checkpoints/sam3.pt")
+# --- 初始化 SAM 2 ---
+# Checkpoint path from 00_testing_field
+CHECKPOINT_PATH = os.path.join("00_testing_field", "sam2_hiera_large.pt")
+# Model Config
+MODEL_CFG = "configs/sam2/sam2_hiera_l.yaml"
+
+sam_engine = SAM2AutoEngine(checkpoint_path=CHECKPOINT_PATH, model_cfg=MODEL_CFG)
 
 class SessionState:
     def __init__(self):
         self.raw_image = None       # 原始圖片
-        self.active_mask = None     # 當前選中的區域 (Binary Mask)
-        self.click_points = []
-        self.click_labels = []
+        self.active_mask = None     # 當前選中的區域 (Binary Mask) Combined
         self.tensor_field = None    # 緩存的張量場
         self.cached_lines = None    # 緩存的線條 (Smoothed)
         self.last_density = None    # 上一次渲染的密度
+        
+        # SAM 2 Specific
+        self.sam2_masks = []          # List of filtered masks from auto-generator
+        self.selected_indices = set() # Indices of masks currently selected
+
+def combine_masks(masks, selected_indices, shape):
+    """Combine selected masks into one binary mask"""
+    final_mask = np.zeros(shape, dtype=np.uint8)
+    if not masks or not selected_indices:
+        return final_mask
+        
+    for idx in selected_indices:
+        if idx < len(masks):
+            # masks[idx]['segmentation'] is boolean
+            m = masks[idx]['segmentation']
+            final_mask[m] = 255
+            
+    return final_mask
+
+def draw_sam2_overlay(image, masks, selected_indices):
+    """
+    Draw all masks. 
+    Selected masks = Bright colors (Random but consistent).
+    Unselected masks = Dim outlines or very faint color.
+    """
+    if image is None: return None
+    overlay = image.copy()
+    
+    # 1. Draw Unselected Masks (Dim)
+    # 2. Draw Selected Masks (Bright)
+    
+    # Pre-generate colors for consistency? 
+    # We can hash the index to get a color
+    np.random.seed(42)
+    colors = [np.random.randint(0, 255, 3).tolist() for _ in range(len(masks))]
+    
+    # Create a canvas for mask blending
+    mask_layer = np.zeros_like(overlay)
+    
+    for i, ann in enumerate(masks):
+        m = ann['segmentation']
+        color = colors[i]
+        
+        if i in selected_indices:
+            # Selected: Bright alpha blend
+            mask_layer[m] = color
+        else:
+            # Unselected: Faint or Outline?
+            # Let's do very faint fill
+            # Darken the color
+            dim_color = [c // 4 for c in color]
+            mask_layer[m] = dim_color
+            
+    # Composite
+    # Mask areas where mask_layer > 0
+    mask_bool = np.any(mask_layer > 0, axis=2)
+    if np.any(mask_bool):
+        overlay[mask_bool] = cv2.addWeighted(overlay[mask_bool], 0.5, mask_layer[mask_bool], 0.5, 0)
+        
+    # Draw Contours for better visibility
+    for i, ann in enumerate(masks):
+        m_uint8 = ann['segmentation_uint8']
+        contours, _ = cv2.findContours(m_uint8, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        
+        if i in selected_indices:
+            cv2.drawContours(overlay, contours, -1, (255, 255, 255), 2) # White thick border
+        else:
+            cv2.drawContours(overlay, contours, -1, (128, 128, 128), 1) # Gray thin border
+
+    return overlay
 
 def on_upload(image, state):
     state = SessionState()
     state.raw_image = image
-    sam_engine.set_image(image)
-    return image, state
+    
+    if image is not None:
+        # Run SAM 2 Auto Segmentation
+        state.sam2_masks = sam_engine.generate_masks(image)
+        
+        # Default: Select ALL filtered masks
+        # The filter logic is supposed to keep only the object, so selecting all is a good default.
+        state.selected_indices = set(range(len(state.sam2_masks)))
+        
+        # Combine
+        state.active_mask = combine_masks(state.sam2_masks, state.selected_indices, image.shape[:2])
+        
+        # Draw Overlay
+        overlay = draw_sam2_overlay(image, state.sam2_masks, state.selected_indices)
+        return image, overlay, state
+    
+    return image, None, state
 
 def clear_field_cache(state):
     """當用戶修改繪圖時，清除緩存的張量場"""
@@ -37,149 +125,33 @@ def clear_field_cache(state):
     state.last_density = None
     return state
 
-def draw_overlay(image, mask, points=None, labels=None):
-    if image is None: return None
-    overlay = image.copy()
+def on_click(state, evt: gr.SelectData):
+    """處理滑鼠點擊 -> Toggle Mask Selection"""
+    if state.raw_image is None or not state.sam2_masks: return None, state
     
-    if mask is not None:
-        colored_mask = np.zeros_like(overlay)
-        colored_mask[:,:,0] = 255 # Red
-        
-        # Alpha blending
-        mask_bool = mask > 0
-        if np.any(mask_bool): # Ensure there is something to blend
-             overlay[mask_bool] = cv2.addWeighted(overlay[mask_bool], 0.6, colored_mask[mask_bool], 0.4, 0)
-        
-    if points and labels:
-        for p, l in zip(points, labels):
-            # Positive (1) = Green (0, 255, 0)
-            # Negative (0) = Blue (255, 0, 0) in BGR (since overlay is BGR/RGB? Gradio uses RGB mostly if type=numpy)
-            # Gradio Image type="numpy" returns RGB usually.
-            # Let's assume RGB.
-            # Green: (0, 255, 0)
-            # Red: (255, 0, 0)
-            color = (0, 255, 0) if l == 1 else (255, 0, 0)
-            cv2.circle(overlay, tuple(p), 5, color, -1)
-            cv2.circle(overlay, tuple(p), 6, (255, 255, 255), 1) # White border
+    # Find which mask was clicked
+    idx = sam_engine.get_mask_at_point(evt.index[0], evt.index[1])
+    
+    if idx != -1:
+        if idx in state.selected_indices:
+            state.selected_indices.remove(idx)
+        else:
+            state.selected_indices.add(idx)
             
-    return overlay
-
-def on_click(point_mode, state, evt: gr.SelectData):
-    """處理滑鼠點擊 -> SAM 3 推理"""
-    if state.raw_image is None: return None, state
-    
-    # 記錄點擊
-    # point_mode: "Add Area (+)" or "Remove Area (-)"
-    label = 1 if "Add" in point_mode else 0
-    
-    state.click_points.append([evt.index[0], evt.index[1]])
-    state.click_labels.append(label)
-    
-    # SAM 3 推理
-    mask = sam_engine.predict_click(state.click_points, state.click_labels)
-    state.active_mask = mask
-    
-    # Mask changed, clear cache
-    state.tensor_field = None
-    state.cached_lines = None
-    state.last_density = None
-    
-    # 視覺化
-    overlay = draw_overlay(state.raw_image, mask, state.click_points, state.click_labels)
+        # Re-combine
+        state.active_mask = combine_masks(state.sam2_masks, state.selected_indices, state.raw_image.shape[:2])
         
-    return overlay, state
-
-def undo_last_point(state):
-    if not state.click_points: return state.raw_image, state
-    
-    state.click_points.pop()
-    state.click_labels.pop()
-    
-    if not state.click_points:
-        state.active_mask = None
-        # Clear cache
+        # Mask changed, clear cache
         state.tensor_field = None
         state.cached_lines = None
         state.last_density = None
-        return state.raw_image, state
         
-    # Re-predict
-    mask = sam_engine.predict_click(state.click_points, state.click_labels)
-    state.active_mask = mask
-    
-    # Mask changed, clear cache
-    state.tensor_field = None
-    state.cached_lines = None
-    state.last_density = None
-    
-    overlay = draw_overlay(state.raw_image, mask, state.click_points, state.click_labels)
-    return overlay, state
-
-def clear_all_points(state):
-    state.click_points = []
-    state.click_labels = []
-    state.active_mask = None
-    state.tensor_field = None
-    state.cached_lines = None
-    state.last_density = None
-    return state.raw_image, state
-
-def on_text_prompt(text, state):
-    """處理文字輸入 -> SAM 3 推理 (適合選取複雜紋理區域)"""
-    if not text or state.raw_image is None: return None, state
-    
-    mask = sam_engine.predict_text(text) # SAM 3 feature
-    state.active_mask = mask
-    
-    # Mask changed, clear cache
-    state.tensor_field = None
-    state.cached_lines = None
-    state.last_density = None
-
-    # 視覺化：Overlay 紅色遮罩
-    overlay = state.raw_image.copy()
-    
-    if mask is not None:
-        # 如果 Mask 覆蓋了大部分區域 (例如 > 90%)，且有點擊點是 Positive 的
-        # 那麼這可能是一個反向 Mask (選到了背景)
-        # 這裡做一個簡單的自動修正嘗試：如果 Mask 面積過大，且有點擊點在 Mask 內，
-        # 我們可能不需要反轉。但如果 Mask 是 "除了物體以外都是白色"，那就是反了。
-        
-        # 觀察圖示，Mask 是紅色的區域 (值=255)。
-        # 如果用戶點的是黃色馬頭，結果紅色遮罩蓋住了背景（黑色區域），
-        # 這意味著 mask == 255 的地方是背景。
-        # 但我們需要的是 mask == 255 的地方是物體。
-        
-        # 檢查 Positive 點是否在 Mask 內
-        # 如果大部分 Positive 點都在 Mask=0 的區域，那 Mask 肯定是反了
-        
-        # 確保 points 和 labels 有定義 (從 state 中獲取)
-        points = state.click_points
-        labels = state.click_labels
-        
-        pos_points = [p for p, l in zip(points, labels) if l == 1]
-        if pos_points:
-            score = 0
-            for p in pos_points:
-                # p is (x, y)
-                # mask is (h, w) -> mask[y, x]
-                if mask[p[1], p[0]] > 0:
-                    score += 1
+        # 視覺化
+        overlay = draw_sam2_overlay(state.raw_image, state.sam2_masks, state.selected_indices)
             
-            # 如果超過一半的正樣本點都沒有被 Mask 覆蓋 (score < len/2)
-            # 那麼這個 Mask 很可能是反的 (Inverted)
-            if score < len(pos_points) / 2:
-                print("Auto-inverting mask based on point feedback...")
-                mask = cv2.bitwise_not(mask)
-
-        colored_mask = np.zeros_like(overlay)
-        colored_mask[:,:,0] = 255 # Red
-        
-        # Alpha blending
-        mask_bool = mask > 0
-        overlay[mask_bool] = cv2.addWeighted(overlay[mask_bool], 0.6, colored_mask[mask_bool], 0.4, 0)
-        
-    return overlay, state
+        return overlay, state
+    
+    return None, state
 
 def prepare_drawing_canvas(state):
     """
@@ -313,21 +285,16 @@ css = """
     max_width: 100% !important;
 }
 """
-with gr.Blocks(title="SAM 3 Hypnotic Art", css=css) as demo:
+with gr.Blocks(title="SAM 2 Hypnotic Art", css=css) as demo:
     state = gr.State(SessionState())
     
-    with gr.Tab("Step 1: Segment (SAM 3)"):
+    with gr.Tab("Step 1: Select Objects (SAM 2)"):
+        gr.Markdown("Upload an image. SAM 2 will automatically segment it. Click on regions to Select/Deselect them.")
         with gr.Row():
             input_img = gr.Image(label="Upload Image", type="numpy")
             seg_preview = gr.Image(label="Segmentation Preview", interactive=False)
         
         with gr.Row():
-            point_type = gr.Radio(["Add Area (+)", "Remove Area (-)"], value="Add Area (+)", label="Point Type")
-            btn_undo = gr.Button("Undo Last Point")
-            btn_clear = gr.Button("Clear All Points")
-
-        with gr.Row():
-            text_prompt = gr.Textbox(label="Text Prompt (Optional)", placeholder="e.g., 'cat eyes'")
             confirm_btn = gr.Button("Confirm Region & Next", variant="primary")
 
     with gr.Tab("Step 2: Draw Flow"):
@@ -351,13 +318,8 @@ with gr.Blocks(title="SAM 3 Hypnotic Art", css=css) as demo:
         result_view = gr.Image()
         
     # Events
-    input_img.upload(on_upload, [input_img, state], [input_img, state])
-    input_img.select(on_click, [point_type, state], [seg_preview, state]) # Pass point_type
-    
-    btn_undo.click(undo_last_point, [state], [seg_preview, state])
-    btn_clear.click(clear_all_points, [state], [seg_preview, state])
-    
-    text_prompt.submit(on_text_prompt, [text_prompt, state], [seg_preview, state])
+    input_img.upload(on_upload, [input_img, state], [input_img, seg_preview, state])
+    input_img.select(on_click, [state], [seg_preview, state])
     
     confirm_btn.click(prepare_drawing_canvas, inputs=[state], outputs=[drawing_board])
     

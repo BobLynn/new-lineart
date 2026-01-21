@@ -1,107 +1,94 @@
 import torch
 import numpy as np
-from ultralytics.models.sam import SAM3SemanticPredictor
+import cv2
+from sam2.build_sam import build_sam2
+from sam2.automatic_mask_generator import SAM2AutomaticMaskGenerator
 
-class SAM3Engine:
-    def __init__(self, checkpoint_path, model_type="sam3_hiera_large", device="cuda"):
+class SAM2AutoEngine:
+    def __init__(self, checkpoint_path, model_cfg, device="cuda"):
         self.device = device if torch.cuda.is_available() else "cpu"
-        print(f"Loading SAM 3 ({model_type}) on {self.device}...")
-        
-        # 使用 Ultralytics 的 SAM3 實現，繞過 triton 依賴
-        # checkpoint_path 作為 model 參數傳入
-        self.predictor = SAM3SemanticPredictor(overrides={'model': checkpoint_path})
-        self.current_image = None
-        self.current_image_set = False
-
-    def set_image(self, image_rgb):
-        """
-        Encoding 圖像。
-        """
-        if image_rgb is None: return
-        self.current_image = image_rgb
-        # Ultralytics 的 set_image 需要傳入圖像
-        try:
-            self.predictor.set_image(image_rgb)
-            self.current_image_set = True
-        except Exception as e:
-            print(f"Warning: set_image failed (possibly due to missing model file): {e}")
-            self.current_image_set = False
-
-    def predict_click(self, point_coords, point_labels):
-        """
-        點擊互動模式 (Point Prompts)
-        """
-        if not self.current_image_set: return None
+        print(f"Loading SAM 2 on {self.device}...")
         
         try:
-            # Ultralytics SAM3 的 prompt_inference API 似乎有問題或簽名不匹配
-            # 我們改用標準的 __call__ 接口 (即 self.predictor(source=...))
-            # 注意: Ultralytics 的 points 格式通常是 [[x, y]]
-            
-            # 獲取圖像尺寸
-            h, w = self.current_image.shape[:2]
-            
-            # 必須提供 Bounding Box 才能避免 torch.cat 錯誤
-            # 我們使用全圖 Box，但關鍵是必須將 Points/Labels/Box 都包裝成 Batch=1 的形式
-            # 這樣模型就會將這些點視為同一組 Prompt，而不是多個獨立的 Prompt
-            box = [0, 0, w, h]
-
-            results = self.predictor(
-                source=self.current_image,
-                points=[point_coords],
-                labels=[point_labels],
-                bboxes=[box],
-                save=False,
-                verbose=False
+            self.sam2_model = build_sam2(model_cfg, checkpoint_path, device=self.device, apply_postprocessing=False)
+            self.mask_generator = SAM2AutomaticMaskGenerator(
+                model=self.sam2_model,
+                points_per_side=32,
+                pred_iou_thresh=0.8,
+                stability_score_thresh=0.9,
+                crop_n_layers=0,
+                min_mask_region_area=100
             )
-            
-            # 解析結果
-            result = results[0] if isinstance(results, list) else results
-            
-            if result.masks is None:
-                return None
-                
-            # masks.data is (N, H, W) tensor
-            masks = result.masks.data.cpu().numpy()
-            
-            # 返回最高分的 mask (通常是第一個)
-            # Ultralytics 的 SAM 可能會根據全圖 Box 優先返回 "背景" 或 "最大物體"
-            # 觀察發現 Index 0 經常是反向的 (全圖減去物體)，而 Index 1 或 2 才是局部物體
-            # 我們這裡做一個簡單的 heuristic: 如果 mask 覆蓋率超過 80% 且有點擊點在 mask 外，嘗試取下一個
-            
-            best_mask = masks[0]
-            
-            # 簡單過濾：如果第一個 mask 幾乎全黑或全白，或者邏輯不對，可以考慮其他候選
-            # 但最直接的方式是讓用戶透過多點來修正
-            # 這裡我們保持回傳 masks[0]，但在 App 層面可能需要檢查是否反轉
-            
-            return best_mask.astype(np.uint8) * 255
+            print("SAM 2 Loaded Successfully.")
         except Exception as e:
-            print(f"Prediction failed: {e}")
-            return None
+            print(f"Error loading SAM 2: {e}")
+            self.mask_generator = None
 
-    def predict_text(self, text_prompt):
+        self.current_masks = []
+        self.image_shape = None
+
+    def generate_masks(self, image_rgb):
         """
-        SAM 3 獨有的文字提示模式 (Promptable Concept Segmentation)
+        Generate all masks for the image and filter them.
         """
-        if not self.current_image_set: return None
+        if self.mask_generator is None or image_rgb is None:
+            return []
         
-        try:
-            # 使用 __call__ 進行文字提示推理
-            results = self.predictor(
-                source=self.current_image,
-                text=[text_prompt],
-                save=False,
-                verbose=False
-            )
+        self.image_shape = image_rgb.shape[:2]
+        
+        print("Generating masks with SAM 2...")
+        masks = self.mask_generator.generate(image_rgb)
+        print(f"Original masks: {len(masks)}")
+        
+        # Filter Logic (from run_sam2_test.py)
+        filtered_masks = []
+        for ann in masks:
+            m = ann['segmentation']
             
-            result = results[0] if isinstance(results, list) else results
-            
-            if result.masks is None:
-                return None
+            # Calculate average color
+            masked_pixels = image_rgb[m]
+            if masked_pixels.size == 0:
+                continue
                 
-            masks = result.masks.data.cpu().numpy()
-            return masks[0].astype(np.uint8) * 255
-        except Exception as e:
-            print(f"Text prediction failed: {e}")
-            return None
+            avg_color = np.mean(masked_pixels, axis=0)
+            
+            # Filter Black Background (< 30)
+            is_black = np.all(avg_color < 30)
+            
+            # Filter White Contours (> 240)
+            is_white = np.all(avg_color > 240)
+            
+            if not is_black and not is_white:
+                # Convert mask to uint8 255 for convenience
+                ann['segmentation_uint8'] = m.astype(np.uint8) * 255
+                filtered_masks.append(ann)
+            else:
+                # color_str = "Black" if is_black else "White"
+                # print(f"Filtered {color_str}, avg: {avg_color}")
+                pass
+                
+        print(f"Filtered masks: {len(filtered_masks)}")
+        self.current_masks = filtered_masks
+        return filtered_masks
+
+    def get_mask_at_point(self, x, y):
+        """
+        Find which mask contains the point (x, y).
+        Returns the index of the mask in self.current_masks, or -1 if none.
+        If multiple masks overlap, returns the smallest one (usually best).
+        """
+        if not self.current_masks:
+            return -1
+            
+        candidates = []
+        for i, ann in enumerate(self.current_masks):
+            # segmentation is boolean mask
+            if ann['segmentation'][y, x]:
+                candidates.append((i, ann['area']))
+        
+        if not candidates:
+            return -1
+            
+        # Return the one with smallest area (most specific)
+        candidates.sort(key=lambda x: x[1])
+        return candidates[0][0]
