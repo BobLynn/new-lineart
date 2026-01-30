@@ -29,7 +29,7 @@ class SAM2AutoEngine:
 
     def generate_masks(self, image_rgb):
         """
-        Generate all masks for the image and filter them.
+        為圖像生成所有遮罩並進行過濾。
         """
         if self.mask_generator is None or image_rgb is None:
             return []
@@ -40,26 +40,26 @@ class SAM2AutoEngine:
         masks = self.mask_generator.generate(image_rgb)
         print(f"Original masks: {len(masks)}")
         
-        # Filter Logic (from run_sam2_test.py)
+        # 過濾邏輯 (來自 run_sam2_test.py)
         filtered_masks = []
         for ann in masks:
             m = ann['segmentation']
             
-            # Calculate average color
+            # 計算平均顏色
             masked_pixels = image_rgb[m]
             if masked_pixels.size == 0:
                 continue
                 
             avg_color = np.mean(masked_pixels, axis=0)
             
-            # Filter Black Background (< 30)
+            # 過濾黑色背景 (< 30)
             is_black = np.all(avg_color < 30)
             
-            # Filter White Contours (> 240)
+            # 過濾白色輪廓 (> 240)
             is_white = np.all(avg_color > 240)
             
             if not is_black and not is_white:
-                # Convert mask to uint8 255 for convenience
+                # 為了方便起見，將遮罩轉換為 uint8 255
                 ann['segmentation_uint8'] = m.astype(np.uint8) * 255
                 filtered_masks.append(ann)
             else:
@@ -73,22 +73,22 @@ class SAM2AutoEngine:
 
     def get_mask_at_point(self, x, y):
         """
-        Find which mask contains the point (x, y).
-        Returns the index of the mask in self.current_masks, or -1 if none.
-        If multiple masks overlap, returns the smallest one (usually best).
+        查找包含點 (x, y) 的遮罩。
+        返回 self.current_masks 中遮罩的索引，如果沒有則返回 -1。
+        如果多個遮罩重疊，則返回最小的一個（通常是最好的）。
         """
         if not self.current_masks:
             return -1
             
         candidates = []
         for i, ann in enumerate(self.current_masks):
-            # segmentation is boolean mask
+            # segmentation 是布林遮罩
             if ann['segmentation'][y, x]:
                 candidates.append((i, ann['area']))
         
         if not candidates:
             return -1
             
-        # Return the one with smallest area (most specific)
+        # 返回面積最小的一個（最特定的）
         candidates.sort(key=lambda x: x[1])
         return candidates[0][0]

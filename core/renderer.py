@@ -105,11 +105,11 @@ class StreamlineRenderer:
             vec = self.get_direction(cx, cy)
             if vec is None: break
             
-            # Align with current backward direction
+            # 與當前後退方向對齊
             if np.dot(vec, curr_vec) < 0:
                 vec = -vec
             
-            curr_vec = vec # Update for next step check
+            curr_vec = vec # 更新下一步檢查的向量
             
             cx += vec[0] * step_size
             cy += vec[1] * step_size
@@ -135,13 +135,13 @@ class StreamlineRenderer:
 
     def smooth_line(self, points):
         """
-        Apply B-Spline interpolation to smooth the streamline points.
+        應用 B-Spline 插值來平滑流線點。
         """
         if splprep is None or len(points) < 4:
             return points
         
         try:
-            # Filter close points to avoid errors
+            # 過濾接近點以避免錯誤
             unique_points = [points[0]]
             for i in range(1, len(points)):
                 dist = np.hypot(points[i][0] - points[i-1][0], points[i][1] - points[i-1][1])
@@ -154,11 +154,11 @@ class StreamlineRenderer:
             x = [p[0] for p in unique_points]
             y = [p[1] for p in unique_points]
             
-            # splprep with s=0 forces interpolation through all points
-            # We can use a small s for smoothing if needed, e.g., s=len(points)*0.1
+            # s=0 的 splprep 強制插值通過所有點
+            # 如果需要，我們可以使用較小的 s 進行平滑，例如 s=len(points)*0.1
             tck, u = splprep([x, y], s=0, k=3) 
             
-            # Generate smooth points
+            # 生成平滑點
             u_new = np.linspace(u.min(), u.max(), len(unique_points))
             x_new, y_new = splev(u_new, tck)
             
@@ -168,7 +168,7 @@ class StreamlineRenderer:
 
     def draw_tapered_line(self, canvas, points, width, sharpness):
         """
-        Draw a tapered line using a polygon (ribbon) approach with sub-pixel precision.
+        使用多邊形（絲帶）方法以亞像素精度繪製錐形線。
         """
         if len(points) < 2:
             return
@@ -176,57 +176,57 @@ class StreamlineRenderer:
         pts = np.array(points, np.float32)
         n = pts.shape[0]
         
-        # Calculate normals
-        # For simplicity, use finite difference
-        # T[i] = P[i+1] - P[i-1] (central difference)
-        # Handle ends: T[0] = P[1] - P[0], T[n-1] = P[n-1] - P[n-2]
+        # 計算法線
+        # 為了簡單起見，使用有限差分
+        # T[i] = P[i+1] - P[i-1] (中心差分)
+        # 處理端點：T[0] = P[1] - P[0], T[n-1] = P[n-1] - P[n-2]
         
-        # Vectors between points
-        diffs = pts[1:] - pts[:-1] # Shape (n-1, 2)
+        # 點之間的向量
+        diffs = pts[1:] - pts[:-1] # 形狀 (n-1, 2)
         
-        # Normalize diffs to get tangent segments
+        # 歸一化差值以獲得切線段
         norms = np.linalg.norm(diffs, axis=1, keepdims=True)
-        norms[norms == 0] = 1.0 # Avoid div by zero
+        norms[norms == 0] = 1.0 # 避免除以零
         tangents = diffs / norms
         
-        # Vertex normals (average of adjacent segment tangents)
-        # N_i is perpendicular to T_i
-        # We need normals at each point.
-        # N[i] = average of normal of segment i-1 and segment i
+        # 頂點法線（相鄰線段切線的平均值）
+        # N_i 垂直於 T_i
+        # 我們需要每個點的法線。
+        # N[i] = 線段 i-1 和線段 i 的法線的平均值
         
-        # Segment normals: (-dy, dx)
+        # 線段法線：(-dy, dx)
         seg_normals = np.stack([-tangents[:, 1], tangents[:, 0]], axis=1)
         
-        # Point normals
+        # 點法線
         point_normals = np.zeros((n, 2), dtype=np.float32)
         point_normals[0] = seg_normals[0]
         point_normals[-1] = seg_normals[-1]
         point_normals[1:-1] = (seg_normals[:-1] + seg_normals[1:]) * 0.5
         
-        # Re-normalize point normals
+        # 重新歸一化點法線
         pn_norms = np.linalg.norm(point_normals, axis=1, keepdims=True)
         pn_norms[pn_norms == 0] = 1.0
         point_normals = point_normals / pn_norms
         
-        # Calculate widths
+        # 計算寬度
         t = np.linspace(0.0, 1.0, n)
-        # Profile: sin(pi * t)
+        # 輪廓：sin(pi * t)
         profiles = np.sin(np.pi * t)
         widths = width * ((1.0 - sharpness) + sharpness * profiles)
         
-        # Calculate ribbon vertices
-        # Left: P + N * w/2
-        # Right: P - N * w/2
+        # 計算絲帶頂點
+        # 左：P + N * w/2
+        # 右：P - N * w/2
         half_widths = (widths * 0.5)[:, np.newaxis]
         offsets = point_normals * half_widths
         
         left_pts = pts + offsets
         right_pts = pts - offsets
         
-        # Construct polygon: Left points forward, then Right points backward
+        # 構建多邊形：左點向前，然後右點向後
         poly_pts = np.concatenate([left_pts, right_pts[::-1]], axis=0)
         
-        # Sub-pixel rendering shift
+        # 亞像素渲染位移
         SHIFT = 4 # 2^4 = 16
         SCALE = 1 << SHIFT
         
@@ -239,8 +239,8 @@ class StreamlineRenderer:
             print("svgwrite module not found. Skipping SVG generation.")
             return None
             
-        # Use consistent generation method
-        # Filter debris
+        # 使用一致的生成方法
+        # 過濾碎片
         auto_min_len = int(max(15, density * 1.5))
         raw_lines = self.generate_streamlines(density, min_len=auto_min_len, show_progress=False)
                 
@@ -250,7 +250,7 @@ class StreamlineRenderer:
         # dwg.add(dwg.rect(insert=(0, 0), size=('100%', '100%'), rx=None, ry=None, fill='white'))
         
         for line_pts in raw_lines:
-            # Smooth
+            # 平滑處理
             smoothed = self.smooth_line(line_pts)
             if len(smoothed) < 2: continue
             
@@ -262,29 +262,29 @@ class StreamlineRenderer:
 
     def generate_streamlines(self, density, min_len=5, show_progress=False):
         """
-        Generate evenly spaced streamlines using a randomized grid with occupancy check.
+        使用帶有佔用檢查的隨機網格生成均勻間隔的流線。
         """
         occupancy_grid = np.zeros((self.h, self.w), dtype=np.uint8)
         
-        # Seed generation: Use a grid finer than density to ensure coverage
+        # 種子生成：使用比密度更細的網格以確保覆蓋
         # step = max(1, int(density / 3))
-        # But for performance, maybe density / 2 is enough
+        # 但為了性能，也許 density / 2 就足夠了
         step = max(2, int(density / 2))
         
         seeds = []
         for y in range(0, self.h, step):
             for x in range(0, self.w, step):
-                # Optimization: Check mask here too
+                # 優化：也在這裡檢查遮罩
                 if self.mask is not None:
                     if self.mask[y, x] == 0:
                         continue
                 seeds.append((x, y))
         
-        # Shuffle seeds to avoid scanning artifacts
+        # 隨機種子以避免掃描偽影
         # random.shuffle(seeds)
-        # DISABLE SHUFFLE to prioritize long continuous lines (Scanline Seeding).
-        # This prevents "fragmentation" where two seeds land on the same path and block each other, leaving a gap.
-        # By iterating systematically, the first seed grows to full length, preventing gaps.
+        # 禁用隨機洗牌以優先考慮長連續線（掃描線播種）。
+        # 這可以防止「碎片化」，即兩個種子落在同一路徑上並相互阻擋，從而留下間隙。
+        # 通過系統地迭代，第一個種子會生長到全長，從而防止間隙。
         
         lines = []
         
@@ -293,24 +293,24 @@ class StreamlineRenderer:
              iterator = tqdm(seeds, desc="Generating streamlines", leave=False)
         
         collision_thickness = int(density)
-        # Ensure minimal thickness
+        # 確保最小厚度
         if collision_thickness < 1: collision_thickness = 1
         
         for sx, sy in iterator:
-            # Check occupancy at seed
+            # 檢查種子處的佔用情況
             if occupancy_grid[sy, sx] > 0:
                 continue
                 
-            # Integrate with collision check
-            # Use smaller step_size for precision
-            # Increase max_steps to ensure lines can traverse the entire image
+            # 集成碰撞檢查
+            # 使用較小的步長以提高精度
+            # 增加最大步數以確保線條可以遍歷整個圖像
             pts = self.integrate_streamline(sx, sy, step_size=0.7, max_steps=4000, collision_mask=occupancy_grid)
             
             if len(pts) < min_len:
                 continue
             
-            # If line is valid, mark occupancy
-            # We use polylines to draw the exclusion zone
+            # 如果線條有效，標記佔用
+            # 我們使用折線繪製排除區域
             pts_i32 = np.array(pts, np.int32).reshape((-1, 1, 2))
             cv2.polylines(occupancy_grid, [pts_i32], False, 255, thickness=collision_thickness)
             
@@ -320,7 +320,7 @@ class StreamlineRenderer:
 
     def render_from_lines(self, lines, line_width, taper_sharpness, canvas=None):
         """
-        Render already computed (and smoothed) lines onto a canvas.
+        將已計算（和平滑）的線條渲染到畫布上。
         """
         if canvas is None:
             canvas = np.zeros((self.h, self.w, 3), dtype=np.uint8)
@@ -340,7 +340,7 @@ class StreamlineRenderer:
                     lineType=cv2.LINE_AA,
                 )
             else:
-                # Use Ribbon Rendering for Tapered Lines
+                # 使用絲帶渲染繪製錐形線
                 self.draw_tapered_line(canvas, line_pts, line_width, taper_sharpness)
         return canvas
 
@@ -352,13 +352,13 @@ class StreamlineRenderer:
                     mask = mask.astype(np.uint8)
                 self.mask = mask
         
-        # Use new generation method
-        # Note: generate_streamlines handles seeds, mask, and progress
-        # But we need to pass show_progress
+        # 使用新的生成方法
+        # 注意：generate_streamlines 處理種子、遮罩和進度
+        # 但我們需要傳遞 show_progress
         
-        # Min length should be proportional to density to avoid "debris"
-        # If a line is shorter than 1.5x spacing, it's likely a fragment between two other lines.
-        # By rejecting it, we leave the space open for a potentially better seed that connects the gap.
+        # 最小長度應與密度成正比以避免「碎片」
+        # 如果一條線短於 1.5 倍間距，它很可能是兩條其他線之間的片段。
+        # 通過拒絕它，我們為可能連接間隙的更好的種子留出了空間。
         auto_min_len = int(max(15, density * 1.5))
         
         raw_lines = self.generate_streamlines(density, min_len=auto_min_len, show_progress=show_progress)
@@ -369,7 +369,7 @@ class StreamlineRenderer:
              iterator = tqdm(raw_lines, desc="Rendering lines", leave=True)
         
         for line_pts in iterator:
-            # Smooth the line using Spline
+            # 使用樣條平滑線條
             smoothed_lines.append(self.smooth_line(line_pts))
             
         return self.render_from_lines(smoothed_lines, line_width, taper_sharpness)

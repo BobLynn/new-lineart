@@ -6,12 +6,12 @@ import cv2
 import os
 import json
 
-# Add project root to path
+# 將項目根目錄添加到路徑
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from core.renderer import StreamlineRenderer
 
-# Colors
+# 顏色
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 GRAY = (100, 100, 100)
@@ -72,7 +72,7 @@ class Slider:
         return changed
 
     def is_over(self, pos):
-        # Check if mouse is near the handle or bar
+        # 檢查滑鼠是否在手柄或條附近
         ratio = (self.val - self.min_val) / (self.max_val - self.min_val)
         handle_x = self.rect.x + ratio * self.rect.w
         handle_y = self.rect.y + self.rect.h // 2
@@ -81,14 +81,14 @@ class Slider:
         return (dx*dx + dy*dy) <= (self.circle_r * self.circle_r * 2) or self.rect.collidepoint(pos)
 
     def draw(self, screen, font):
-        # Draw Label
+        # 繪製標籤
         label_surf = font.render(f"{self.label}: {self.val:.2f}", True, WHITE)
         screen.blit(label_surf, (self.rect.x, self.rect.y - 25))
 
-        # Draw Bar
+        # 繪製條
         pygame.draw.rect(screen, GRAY, self.rect, border_radius=4)
         
-        # Draw Handle
+        # 繪製手柄
         ratio = (self.val - self.min_val) / (self.max_val - self.min_val)
         handle_x = self.rect.x + ratio * self.rect.w
         handle_y = self.rect.y + self.rect.h // 2
@@ -112,26 +112,26 @@ def main():
     mask = data['mask']
     h, w = tensor_field.shape[:2]
     
-    # Init Renderer
+    # 初始化渲染器
     renderer = StreamlineRenderer(tensor_field, h, w)
     if mask is not None:
         renderer.mask = mask
     
-    # Init Pygame
+    # 初始化 Pygame
     pygame.init()
     
     CTRL_PANEL_WIDTH = 300
     screen_w = w + CTRL_PANEL_WIDTH
-    screen_h = max(h, 400) # Ensure enough height for controls
+    screen_h = max(h, 400) # 確保控制項有足夠的高度
     
     screen = pygame.display.set_mode((screen_w, screen_h))
     pygame.display.set_caption("Lineart Real-time Tuner (Pygame)")
     font = pygame.font.SysFont("Arial", 16)
     
-    # Sliders (Left Panel, Vertical Layout)
-    # Density: 5 to 50
-    # Width: 1 to 10
-    # Sharpness: 0.0 to 1.0
+    # 滑塊 (左側面板，垂直佈局)
+    # 密度: 5 到 50
+    # 寬度: 1 到 10
+    # 清晰度: 0.0 到 1.0
     
     slider_x = 30
     slider_w = CTRL_PANEL_WIDTH - 60
@@ -144,7 +144,7 @@ def main():
         Slider(slider_x, start_y + gap_y * 2, slider_w, 10, 0.0, 1.0, 0.5, "Sharpness")
     ]
     
-    # Buttons
+    # 按鈕
     def save_params():
         params = {
             "density": float(sliders[0].val),
@@ -164,13 +164,13 @@ def main():
     clock = pygame.time.Clock()
     running = True
     
-    # Cache
+    # 緩存
     cached_lines = None
     last_rendered_density = -1
     last_rendered_width = -1
     last_rendered_sharpness = -1
     
-    # Surface for the artwork
+    # 藝術品表面
     art_surface = None
     
     def update_artwork(density, width, sharpness):
@@ -178,14 +178,14 @@ def main():
         
         print(f"Updating artwork... (D={density:.1f}, W={width:.1f}, S={sharpness:.2f})")
         
-        # 1. Re-integrate if density changed significantly
+        # 1. 如果密度發生顯著變化，則重新積分
         if cached_lines is None or abs(density - last_rendered_density) > 0.1:
             print("Re-integrating streamlines...")
-            # Use renderer's ESSP generation
+            # 使用渲染器的 ESSP 生成
             if mask is not None:
                 renderer.mask = mask
             
-            # Filter short lines aggressively to prevent fragmentation
+            # 積極過濾短線以防止碎片化
             auto_min_len = int(max(15, density * 1.5))
             raw_lines = renderer.generate_streamlines(density, min_len=auto_min_len, show_progress=False)
             
@@ -196,35 +196,34 @@ def main():
             
             print(f"Generated {len(cached_lines)} lines.")
         
-        # 2. Render to Canvas
+        # 2. 渲染到畫布
         canvas = np.zeros((h, w, 3), dtype=np.uint8)
         
         for line_pts in cached_lines:
             if len(line_pts) < 2: continue
             
             if sharpness <= 0:
-                 # Fast Polyline
+                 # 快速折線繪製
                  pts = np.array(line_pts, np.int32)
                  cv2.polylines(canvas, [pts], False, (255, 255, 255), int(width), cv2.LINE_AA)
             else:
-                # Use Ribbon Rendering
+                # 使用絲帶渲染
                 renderer.draw_tapered_line(canvas, line_pts, width, sharpness)
 
-        # 3. Create Surface
+        # 3. 創建 Surface
         art_surface = pygame.image.frombuffer(canvas.tobytes(), (w, h), "BGR")
         
-        # Update state
+        # 更新狀態
         last_rendered_density = density
         last_rendered_width = width
         last_rendered_sharpness = sharpness
-
-    # Initial Render
+    # 初始渲染
     update_artwork(sliders[0].val, sliders[1].val, sliders[2].val)
 
     while running:
-        screen.fill((30, 30, 30)) # Dark Gray UI BG
+        screen.fill((30, 30, 30)) # 深灰色 UI 背景
         
-        # Event Handling
+        # 事件處理
         mouse_released = False
         
         for event in pygame.event.get():
@@ -239,37 +238,37 @@ def main():
             
             save_btn.handle_event(event)
         
-        # Check if we need update (Only on Release)
+        # 檢查是否需要更新 (僅在釋放時)
         if mouse_released:
             curr_d = sliders[0].val
             curr_w = sliders[1].val
             curr_s = sliders[2].val
             
-            # Check if values differ from rendered
+            # 檢查數值是否與已渲染的不同
             if (abs(curr_d - last_rendered_density) > 0.01 or 
                 abs(curr_w - last_rendered_width) > 0.01 or 
                 abs(curr_s - last_rendered_sharpness) > 0.01):
                 
                 update_artwork(curr_d, curr_w, curr_s)
         
-        # Draw Artwork
+        # 繪製藝術品
         if art_surface:
-            # Center vertically if canvas is smaller than screen
+            # 如果畫布小於螢幕，則垂直居中
             art_y = (screen_h - h) // 2 if h < screen_h else 0
             screen.blit(art_surface, (CTRL_PANEL_WIDTH, art_y))
         
-        # Draw Separator Line
+        # 繪製分隔線
         pygame.draw.line(screen, (80, 80, 80), (CTRL_PANEL_WIDTH, 0), (CTRL_PANEL_WIDTH, screen_h), 2)
         
-        # Draw Sliders
+        # 繪製滑塊
         for s in sliders:
             s.draw(screen, font)
         
-        # Draw Button
+        # 繪製按鈕
         save_btn.draw(screen, font)
             
         pygame.display.flip()
-        clock.tick(30) # 30 FPS cap
+        clock.tick(30) # 限制 30 FPS
 
     pygame.quit()
 
