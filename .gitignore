@@ -27,3 +27,9 @@ flagged/
 # 忽略一些指標檔案
 temp_preview.pkl
 tuner_params.json
+
+# 忽略除錯日誌與生成的圖片
+streamline.png
+solver_debug.log
+geometry_debug.log
+debug_constraints.png
