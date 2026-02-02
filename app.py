@@ -7,7 +7,7 @@ import pickle
 import json
 import subprocess
 import sam2
-from core.segmentation import SAM2AutoEngine
+from core.segmentation import SAM2AutoEngine, SAM3AutoEngine
 from core.tensor_solver import TensorFieldGenerator
 from core.renderer import StreamlineRenderer
 from utils.geometry import parse_gradio_sketch
@@ -19,6 +19,18 @@ CHECKPOINT_PATH = os.path.join("00_testing_field", "sam2_hiera_large.pt")
 MODEL_CFG = os.path.join(os.path.dirname(sam2.__file__), "configs", "sam2", "sam2_hiera_l.yaml")
 
 sam_engine = SAM2AutoEngine(checkpoint_path=CHECKPOINT_PATH, model_cfg=MODEL_CFG)
+
+# --- 初始化 SAM 3 (替換 SAM 2) ---
+# Checkpoint 路徑
+# CHECKPOINT_PATH = os.path.join("checkpoints", "sam3.pt")
+
+# 如果您想切換回 SAM 2，請取消註釋以下行並修改 sam_engine 初始化
+# CHECKPOINT_PATH = os.path.join("00_testing_field", "sam2_hiera_large.pt")
+# MODEL_CFG = os.path.join(os.path.dirname(sam2.__file__), "configs", "sam2", "sam2_hiera_l.yaml")
+# sam_engine = SAM2AutoEngine(checkpoint_path=CHECKPOINT_PATH, model_cfg=MODEL_CFG)
+
+# 使用 SAM 3 引擎
+# sam_engine = SAM3AutoEngine(model_path=CHECKPOINT_PATH)
 
 class SessionState:
     def __init__(self):
@@ -49,52 +61,59 @@ def combine_masks(masks, selected_indices, shape):
 def draw_sam2_overlay(image, masks, selected_indices):
     """
     繪製所有遮罩。
-    選中的遮罩 = 亮色（隨機但一致）。
-    未選中的遮罩 = 暗淡輪廓或非常淡的顏色。
+    選中的遮罩 = 高亮（高不透明度，鮮豔）。
+    未選中的遮罩 = 暗淡（壓暗原圖，不疊加顏色）。
     """
     if image is None: return None
     overlay = image.copy()
     
-    # 1. 繪製未選中的遮罩 (暗淡)
-    # 2. 繪製選中的遮罩 (明亮)
-    
-    # 預生成顏色以保持一致性？
-    # 我們可以對索引進行雜湊以獲取顏色
     np.random.seed(42)
     colors = [np.random.randint(0, 255, 3).tolist() for _ in range(len(masks))]
     
-    # 創建一個用於遮罩混合的畫布
-    mask_layer = np.zeros_like(overlay)
+    # 1. 處理未選中的遮罩：將這些區域壓暗
+    # 為了避免重複壓暗重疊區域，我們先計算所有未選中區域的聯集
+    unselected_region = np.zeros(image.shape[:2], dtype=bool)
+    for i, ann in enumerate(masks):
+        if i not in selected_indices:
+            unselected_region = np.logical_or(unselected_region, ann['segmentation'])
+    
+    # 如果某個像素同時屬於選中和未選中（重疊），我們優先視為「選中」，所以從未選中區域剔除選中區域
+    for i, ann in enumerate(masks):
+        if i in selected_indices:
+            unselected_region = np.logical_and(unselected_region, np.logical_not(ann['segmentation']))
+
+    # 應用壓暗效果 (乘以 0.4，即變暗 60%)
+    if np.any(unselected_region):
+        overlay[unselected_region] = (overlay[unselected_region] * 0.4).astype(np.uint8)
+
+    # 2. 處理選中的遮罩：高亮疊加
+    selected_layer = np.zeros_like(overlay)
+    selected_region = np.zeros(image.shape[:2], dtype=bool)
     
     for i, ann in enumerate(masks):
-        m = ann['segmentation']
-        color = colors[i]
-        
         if i in selected_indices:
-            # 選中：明亮的 Alpha 混合
-            mask_layer[m] = color
-        else:
-            # 未選中：淡色或輪廓？
-            # 讓我們做非常淡的填充
-            # 加深顏色
-            dim_color = [c // 4 for c in color]
-            mask_layer[m] = dim_color
-            
-    # 合成
-    # 遮罩區域 (mask_layer > 0)
-    mask_bool = np.any(mask_layer > 0, axis=2)
-    if np.any(mask_bool):
-        overlay[mask_bool] = cv2.addWeighted(overlay[mask_bool], 0.5, mask_layer[mask_bool], 0.5, 0)
-        
-    # 繪製輪廓以提高可見度
+            m = ann['segmentation']
+            selected_region = np.logical_or(selected_region, m)
+            selected_layer[m] = colors[i]
+    
+    # 合成選中區域 (原圖 0.3 + 顏色 0.7) -> 讓顏色更實，透明度更低
+    if np.any(selected_region):
+        overlay[selected_region] = cv2.addWeighted(
+            overlay[selected_region], 0.3, 
+            selected_layer[selected_region], 0.7, 0
+        )
+
+    # 3. 繪製輪廓
     for i, ann in enumerate(masks):
         m_uint8 = ann['segmentation_uint8']
         contours, _ = cv2.findContours(m_uint8, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         
         if i in selected_indices:
-            cv2.drawContours(overlay, contours, -1, (255, 255, 255), 2) # 白色粗邊框
+            # 選中：白色粗邊框
+            cv2.drawContours(overlay, contours, -1, (255, 255, 255), 2)
         else:
-            cv2.drawContours(overlay, contours, -1, (128, 128, 128), 1) # 灰色細邊框
+            # 未選中：深灰色細邊框 (讓它不明顯)
+            cv2.drawContours(overlay, contours, -1, (60, 60, 60), 1)
 
     return overlay
 
@@ -276,7 +295,7 @@ def run_hypnotic_gen(drawing_dict, density, width, sharpness, state):
     img, state = update_preview(drawing_dict, density, width, sharpness, state)
     return img, state
 
-# --- 佈局 ---
+# --- 網頁佈局的部分 ---
 css = """
 #drawing-board {
     height: 80vh !important;
@@ -286,43 +305,46 @@ css = """
     max_width: 100% !important;
 }
 """
-with gr.Blocks(title="SAM 2 催眠藝術") as demo:
+with gr.Blocks(title="NEW! LINEART") as demo:
     state = gr.State(SessionState())
     
-    with gr.Tab("第一步: 選擇對象 (SAM 2)"):
-        gr.Markdown("上傳圖片。SAM 2 將自動對其進行分割。點擊區域以選擇/取消選擇。")
-        with gr.Row():
-            input_img = gr.Image(label="上傳圖片", type="numpy")
-            seg_preview = gr.Image(label="分割預覽", interactive=False)
-        
-        with gr.Row():
-            confirm_btn = gr.Button("確認區域並下一步", variant="primary")
+    with gr.Tabs() as tabs:
+        with gr.Tab("第一步: 選擇對象 (SAM 2)", id=0):
+            gr.Markdown("請上傳圖片。SAM 2 將自動對其進行分割。點擊區域以選擇/取消選擇。")
+            with gr.Row():
+                input_img = gr.Image(label="上傳圖片", type="numpy")
+                seg_preview = gr.Image(label="分割預覽", interactive=False)
+            
+            with gr.Row():
+                confirm_btn = gr.Button("確認區域並下一步", variant="primary")
 
-    with gr.Tab("第二步: 繪製流向"):
-        gr.Markdown("畫紅線以引導流向。")
-        drawing_board = gr.ImageEditor(label="繪製筆觸", type="numpy", elem_id="drawing-board")
-        
-    with gr.Tab("第三步: 預覽與調整"):
-        with gr.Row():
-            density_slider = gr.Slider(5, 50, value=20, label="間距密度")
-            width_slider = gr.Slider(1, 10, value=2, label="基礎寬度")
-            sharp_slider = gr.Slider(0, 1, value=0.5, label="漸變清晰度")
-        
-        btn_refresh_preview = gr.Button("刷新預覽", variant="secondary")
-        btn_interactive = gr.Button("啟動互動調節器 (Pygame)", variant="primary")
-        btn_sync = gr.Button("從調節器同步參數", variant="secondary") # 新按鈕
-        status_msg = gr.Textbox(label="狀態", interactive=False)
-        preview_view = gr.Image(label="線稿預覽", interactive=False)
-        
-    with gr.Tab("第四步: 結果"):
-        gen_btn = gr.Button("開始催眠！", variant="stop")
-        result_view = gr.Image()
+        with gr.Tab("第二步: 繪製流向", id=1):
+            gr.Markdown("畫紅線以引導流向。")
+            drawing_board = gr.ImageEditor(label="繪製筆觸", type="numpy", elem_id="drawing-board")
+            
+        with gr.Tab("第三步: 預覽與調整", id=2):
+            with gr.Row():
+                density_slider = gr.Slider(5, 50, value=20, label="間距密度")
+                width_slider = gr.Slider(1, 10, value=2, label="基礎寬度")
+                sharp_slider = gr.Slider(0, 1, value=0.5, label="漸變清晰度")
+            
+            btn_refresh_preview = gr.Button("刷新預覽", variant="secondary")
+            btn_interactive = gr.Button("啟動互動調節器 (Pygame)", variant="primary")
+            btn_sync = gr.Button("從調節器同步參數", variant="secondary") # 新按鈕
+            status_msg = gr.Textbox(label="狀態", interactive=False)
+            preview_view = gr.Image(label="線稿預覽", interactive=False)
+            
+        with gr.Tab("第四步: 結果", id=3):
+            gen_btn = gr.Button("開始催眠！", variant="stop")
+            result_view = gr.Image()
         
     # 事件
     input_img.upload(on_upload, [input_img, state], [input_img, seg_preview, state])
     input_img.select(on_click, [state], [seg_preview, state])
     
-    confirm_btn.click(prepare_drawing_canvas, inputs=[state], outputs=[drawing_board])
+    confirm_btn.click(prepare_drawing_canvas, inputs=[state], outputs=[drawing_board]).then(
+        lambda: gr.update(selected=1), None, tabs
+    )
     
     # 當繪圖改變時，清除緩存
     drawing_board.change(clear_field_cache, inputs=[state], outputs=[state])
