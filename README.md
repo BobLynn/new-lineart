@@ -46,7 +46,7 @@ pip install -r requirements.txt
 ### 4. 模型權重 (Checkpoints)
 請確保您已下載 SAM 2 的模型權重與設定檔，並放置於正確位置：
 
-- **模型權重 (.pt)**：放置於 `00_testing_field/sam2_hiera_large.pt` (預設路徑，可於 `app.py` 中修改)
+- **模型權重 (.pt)**：放置於 `checkpoints/sam2_hiera_large.pt` (預設路徑，可於 `app.py` 中修改)
 - **設定檔 (.yaml)**：放置於 `configs/sam2/sam2_hiera_l.yaml`
 
 您可以從 [SAM 2 Checkpoints](https://github.com/facebookresearch/sam2#model-checkpoints) 下載對應的模型。

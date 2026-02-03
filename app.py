@@ -13,8 +13,8 @@ from core.renderer import StreamlineRenderer
 from utils.geometry import parse_gradio_sketch
 
 # --- 初始化 SAM 2 ---
-# Checkpoint 路徑 (來自 00_testing_field)
-CHECKPOINT_PATH = os.path.join("00_testing_field", "sam2_hiera_large.pt")
+# Checkpoint 路徑 (來自 checkpoints)
+CHECKPOINT_PATH = os.path.join("checkpoints", "sam2_hiera_large.pt")
 # 模型配置 (指向環境中的 sam2 設定檔)
 MODEL_CFG = os.path.join(os.path.dirname(sam2.__file__), "configs", "sam2", "sam2_hiera_l.yaml")
 
@@ -25,7 +25,7 @@ sam_engine = SAM2AutoEngine(checkpoint_path=CHECKPOINT_PATH, model_cfg=MODEL_CFG
 # CHECKPOINT_PATH = os.path.join("checkpoints", "sam3.pt")
 
 # 如果您想切換回 SAM 2，請取消註釋以下行並修改 sam_engine 初始化
-# CHECKPOINT_PATH = os.path.join("00_testing_field", "sam2_hiera_large.pt")
+# CHECKPOINT_PATH = os.path.join("checkpoints", "sam2_hiera_large.pt")
 # MODEL_CFG = os.path.join(os.path.dirname(sam2.__file__), "configs", "sam2", "sam2_hiera_l.yaml")
 # sam_engine = SAM2AutoEngine(checkpoint_path=CHECKPOINT_PATH, model_cfg=MODEL_CFG)
 
@@ -209,9 +209,9 @@ def update_preview(drawing_dict, density, width, sharpness, state):
     
     # 檢查緩存
     need_new_lines = True
-    if state.cached_lines is not None and state.last_density is not None:
-        if abs(state.last_density - density) < 0.1:
-            need_new_lines = False
+    # if state.cached_lines is not None and state.last_density is not None:
+    #     if abs(state.last_density - density) < 0.1:
+    #         need_new_lines = False
             
     if need_new_lines:
         print(f"正在生成新的流線 (密度: {density})...")
