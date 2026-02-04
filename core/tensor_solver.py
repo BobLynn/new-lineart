@@ -7,22 +7,54 @@ from typing import List, Tuple
 import time
 
 def log_solver(msg):
+    """
+    記錄求解器日誌到文件
+
+    參數:
+        msg: 日誌訊息字符串
+    """
     with open("solver_debug.log", "a", encoding='utf-8') as f:
         f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {msg}\n")
 
 class TensorFieldGenerator:
+    """
+    張量場生成器類
+    負責根據用戶約束和邊界條件求解拉普拉斯方程，生成平滑的張量場
+    """
     def __init__(self, height: int, width: int):
+        """
+        初始化張量場生成器
+
+        參數:
+            height: 網格高度
+            width: 網格寬度
+        """
         self.h, self.w = height, width
         self.N = self.h * self.w
         log_solver(f"Initialized TensorFieldGenerator: {width}x{height} (N={self.N})")
         
     def _xy_to_idx(self, x, y):
+        """
+        將二維坐標轉換為一維索引
+
+        參數:
+            x: X 坐標
+            y: Y 坐標
+        
+        返回:
+            一維索引值
+        """
         return y * self.w + x
 
     def solve_field(self, constraints: List[Tuple[int, int, float, float]]):
         """
-        constraints: (x, y, vector_x, vector_y) 的列表
         求解拉普拉斯方程：L * T = 0 s.t. 硬約束
+        
+        參數:
+            constraints: (x, y, vector_x, vector_y) 的列表，代表硬約束點
+        
+        返回:
+            求解後的張量場 (H, W, 3)
         """
         log_solver(f"solve_field called with {len(constraints)} constraints")
         print(f"Building system for {self.w}x{self.h} grid...")
@@ -120,8 +152,15 @@ class TensorFieldGenerator:
 
     def solve_field_with_mask(self, stroke_constraints: List[Tuple[int, int, float, float]], mask: np.ndarray):
         """
-        合併遮罩邊界約束。
-        mask: 二值遮罩 (uint8)，255 或 1 表示前景。
+        合併遮罩邊界約束和用戶筆觸約束進行求解。
+        會自動處理邊界約束與用戶筆觸的衝突（抑制附近的邊界約束）。
+
+        參數:
+            stroke_constraints: 用戶筆觸約束列表 [(x, y, vx, vy), ...]
+            mask: 二值遮罩 (uint8)，255 或 1 表示前景區域
+
+        返回:
+            求解後的張量場
         """
         log_solver(f"solve_field_with_mask called. Stroke constraints: {len(stroke_constraints)}")
         

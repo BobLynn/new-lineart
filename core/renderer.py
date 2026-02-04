@@ -22,7 +22,19 @@ except ImportError:
     splev = None
 
 class StreamlineRenderer:
+    """
+    流線渲染器類
+    負責根據張量場生成和渲染流線
+    """
     def __init__(self, tensor_field, height, width):
+        """
+        初始化流線渲染器
+
+        參數:
+            tensor_field: 輸入的張量場 (H, W, 3) 或 (H, W, 2)
+            height: 圖像高度
+            width: 圖像寬度
+        """
         self.field = tensor_field
         self.h = height
         self.w = width
@@ -43,6 +55,16 @@ class StreamlineRenderer:
                     self.dir_field = vec
         
     def get_direction(self, x, y):
+        """
+        獲取指定坐標處的流線方向
+
+        參數:
+            x: X 坐標
+            y: Y 坐標
+
+        返回:
+            方向向量 (vx, vy) 或 None (如果坐標越界或向量長度過小)
+        """
         xi, yi = int(x), int(y)
         if xi < 0 or xi >= self.w - 1 or yi < 0 or yi >= self.h - 1:
             return None
@@ -62,6 +84,19 @@ class StreamlineRenderer:
         return evecs[:, 1]
 
     def integrate_streamline(self, start_x, start_y, step_size=1.0, max_steps=100, collision_mask=None):
+        """
+        積分生成流線
+
+        參數:
+            start_x: 起始點 X 坐標
+            start_y: 起始點 Y 坐標
+            step_size: 積分步長
+            max_steps: 最大步數
+            collision_mask: 碰撞遮罩，用於檢查是否與現有流線重疊
+
+        返回:
+            points: 流線點列表 [(x, y), ...]
+        """
         points = [(start_x, start_y)]
         cx, cy = start_x, start_y
         
@@ -235,6 +270,17 @@ class StreamlineRenderer:
         cv2.fillPoly(canvas, [poly_pts_fixed], (255, 255, 255), lineType=cv2.LINE_AA, shift=SHIFT)
 
     def render_svg(self, density=20, line_width=2.0, output_path="output.svg"):
+        """
+        將流線渲染為 SVG 文件
+
+        參數:
+            density: 流線密度
+            line_width: 線條寬度
+            output_path: 輸出文件路徑
+
+        返回:
+            SVG 內容字符串 或 None (如果 svgwrite 未安裝)
+        """
         if svgwrite is None:
             print("svgwrite module not found. Skipping SVG generation.")
             return None
@@ -263,6 +309,14 @@ class StreamlineRenderer:
     def generate_streamlines(self, density, min_len=5, show_progress=False):
         """
         使用帶有佔用檢查的隨機網格生成均勻間隔的流線。
+
+        參數:
+            density: 流線密度 (控制網格步長和碰撞厚度)
+            min_len: 最小流線長度 (點數)
+            show_progress: 是否顯示進度條
+
+        返回:
+            lines: 流線列表，每個元素為點列表
         """
         occupancy_grid = np.zeros((self.h, self.w), dtype=np.uint8)
         
@@ -321,6 +375,15 @@ class StreamlineRenderer:
     def render_from_lines(self, lines, line_width, taper_sharpness, canvas=None):
         """
         將已計算（和平滑）的線條渲染到畫布上。
+
+        參數:
+            lines: 流線列表
+            line_width: 線條寬度
+            taper_sharpness: 錐度銳利度 (0.0 表示無錐度)
+            canvas: 目標畫布 (可選)
+
+        返回:
+            canvas: 渲染後的畫布
         """
         if canvas is None:
             canvas = np.zeros((self.h, self.w, 3), dtype=np.uint8)
@@ -345,6 +408,20 @@ class StreamlineRenderer:
         return canvas
 
     def render_image(self, density=20, line_width=2, bg_image=None, show_progress=False, mask=None, taper_sharpness=0.0):
+        """
+        渲染完整圖像
+
+        參數:
+            density: 流線密度
+            line_width: 線條寬度
+            bg_image: 背景圖像 (目前未使用)
+            show_progress: 是否顯示進度條
+            mask: 限制流線生成的遮罩
+            taper_sharpness: 錐度銳利度
+
+        返回:
+            渲染後的圖像
+        """
         self.mask = None
         if isinstance(mask, np.ndarray):
             if mask.shape[:2] == (self.h, self.w):

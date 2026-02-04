@@ -34,5 +34,6 @@ solver_debug.log
 geometry_debug.log
 debug_constraints.png
 
-#測試程式 app_2.py
+#測試app python
 app_2.py
+app_2_1.py
