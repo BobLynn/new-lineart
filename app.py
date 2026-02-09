@@ -364,7 +364,7 @@ css = """
 """
 
 # 創建 Gradio 界面
-with gr.Blocks(title="NEW! LINEART") as demo:
+with gr.Blocks(title="NEW! FUCKIN' LINEART") as wahahaha:
     state = gr.State(SessionState())  # 初始化會話狀態
     
     with gr.Tabs() as tabs:
@@ -446,4 +446,4 @@ with gr.Blocks(title="NEW! LINEART") as demo:
                  outputs=[result_view, state])
 
 if __name__ == "__main__":
-    demo.launch()  # 啟動 Gradio 應用
+    wahahaha.launch()  # 啟動 Gradio 應用

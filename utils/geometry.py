@@ -1,4 +1,7 @@
 # utils/geometry.py
+from typing import Any
+
+
 import cv2  # 導入 OpenCV 庫，用於圖像處理
 import numpy as np  # 導入 NumPy 庫，用於數值計算和矩陣操作
 from skimage.morphology import skeletonize  # 從 skimage 導入骨架化函數，用於提取線條骨架
@@ -32,12 +35,14 @@ def parse_gradio_sketch(original_img, sketch_dict):
     
     # 檢查輸入是否為字典類型
     if isinstance(sketch_dict, dict):
-        keys = list(sketch_dict.keys())  # 獲取字典的所有鍵
-        log_debug(f"Dict keys: {keys}")  # 記錄鍵名
+        keys = list[Any](sketch_dict.keys())  # 獲取字典的所有鍵
+        log_debug(f"Dict keys: {keys}")  # 記錄鍵名（用於除錯）
         
         # 1. 嘗試處理 'layers' 鍵 (Gradio ImageEditor 的標準格式)
         if 'layers' in sketch_dict and sketch_dict['layers']:
             log_debug(f"Found {len(sketch_dict['layers'])} layers")  # 記錄圖層數量
+            log_debug(f"Found {len(sketch_dict['mask'])} masks")  # HSIN: 記錄所有遮罩資訊
+            log_debug(f"Mask shapes: {[m.shape for m in sketch_dict['mask']]}")  # HSIN: 記錄所有遮罩形狀
             # 圖層通常是 RGBA 格式。我們需要合併所有圖層（筆觸）的 Alpha 通道
             
             # 檢查圖層列表是否非空且第一個圖層存在
@@ -45,6 +50,7 @@ def parse_gradio_sketch(original_img, sketch_dict):
                 # 獲取圖像的高度和寬度
                 h, w = sketch_dict['layers'][0].shape[:2]
                 log_debug(f"Layer 0 shape: {sketch_dict['layers'][0].shape}")  # 記錄圖層形狀
+                print(f"Layer 0 shape: {sketch_dict['layers'][0].shape}")       # HSIN: print第一個圖層形狀
                 
                 # 初始化合併後的 Alpha 通道，全為 0
                 combined_alpha = np.zeros((h, w), dtype=np.uint8)
