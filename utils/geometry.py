@@ -16,6 +16,14 @@ def log_debug(msg):
     with open("geometry_debug.log", "a", encoding='utf-8') as f:
         # 寫入帶有時間戳的訊息
         f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {msg}\n")
+def _save_mask_img(mask, tag):
+    ts = time.strftime('%Y%m%d_%H%M%S')
+    fname = f"debug_mask_{tag}_{ts}.png"
+    try:
+        cv2.imwrite(fname, mask)
+        log_debug(f"Mask image saved: {fname}")
+    except Exception as e:
+        log_debug(f"Failed to save mask image ({tag}): {e}")
 
 def parse_gradio_sketch(original_img, sketch_dict):
     """
@@ -35,14 +43,18 @@ def parse_gradio_sketch(original_img, sketch_dict):
     
     # 檢查輸入是否為字典類型
     if isinstance(sketch_dict, dict):
-        keys = list[Any](sketch_dict.keys())  # 獲取字典的所有鍵
+        keys = list(sketch_dict.keys())  # 獲取字典的所有鍵
         log_debug(f"Dict keys: {keys}")  # 記錄鍵名（用於除錯）
         
         # 1. 嘗試處理 'layers' 鍵 (Gradio ImageEditor 的標準格式)
         if 'layers' in sketch_dict and sketch_dict['layers']:
             log_debug(f"Found {len(sketch_dict['layers'])} layers")  # 記錄圖層數量
-            log_debug(f"Found {len(sketch_dict['mask'])} masks")  # HSIN: 記錄所有遮罩資訊
-            log_debug(f"Mask shapes: {[m.shape for m in sketch_dict['mask']]}")  # HSIN: 記錄所有遮罩形狀
+            if 'mask' in sketch_dict:
+                log_debug(f"Found {len(sketch_dict['mask'])} masks")
+                try:
+                    log_debug(f"Mask shapes: {[m.shape for m in sketch_dict['mask']]}")
+                except Exception as e:
+                    log_debug(f"Mask shapes logging failed: {e}")
             # 圖層通常是 RGBA 格式。我們需要合併所有圖層（筆觸）的 Alpha 通道
             
             # 檢查圖層列表是否非空且第一個圖層存在
@@ -86,12 +98,16 @@ def parse_gradio_sketch(original_img, sketch_dict):
                 # 如果最大值大於 10，認為提取到了有效的筆觸遮罩
                 if max_val > 10:
                     mask = combined_alpha
-                    log_debug("Mask extracted from layers")  # 記錄成功提取
+                    log_debug("Mask extracted from layers")  # 記錄成功提取遮罩
+                    _save_mask_img(mask, "layers")
+                else:
+                    log_debug("No valid mask found from layers")  # 記錄未找到有效遮罩
 
         # 2. 如果尚未提取到遮罩，嘗試 'mask' 鍵 (舊版或 Sketchpad 風格)
         if mask is None and 'mask' in sketch_dict:
             log_debug("Trying 'mask' key")  # 記錄嘗試使用 'mask' 鍵
             mask = sketch_dict['mask']  # 直接獲取遮罩
+            _save_mask_img(mask, "mask")
 
         # 3. 如果仍未提取到遮罩，回退到 'composite' 鍵 (合成圖)
         if mask is None and 'composite' in sketch_dict:
@@ -112,6 +128,7 @@ def parse_gradio_sketch(original_img, sketch_dict):
                 # 進行二值化處理，閾值設為 10
                 _, mask = cv2.threshold(gray, 10, 255, cv2.THRESH_BINARY)
             log_debug("Mask extracted from composite")  # 記錄從合成圖提取
+            _save_mask_img(mask, "composite")
                 
     # 如果輸入本身就是 numpy 陣列 (而不是字典)
     elif isinstance(sketch_dict, np.ndarray):
@@ -126,6 +143,7 @@ def parse_gradio_sketch(original_img, sketch_dict):
             else:
                 gray = comp
             _, mask = cv2.threshold(gray, 10, 255, cv2.THRESH_BINARY)
+        _save_mask_img(mask, "ndarray")
             
     # 如果最終沒有提取到遮罩，返回空列表
     if mask is None:
@@ -143,6 +161,7 @@ def parse_gradio_sketch(original_img, sketch_dict):
             log_debug(f"Resizing mask from {mask.shape} to {(h, w)}")  # 記錄調整大小
             # 使用最近鄰插值調整大小，保持邊緣清晰
             mask = cv2.resize(mask, (w, h), interpolation=cv2.INTER_NEAREST)
+            _save_mask_img(mask, "resized")
 
     # 將遮罩二值化，值為 0 或 1，用於骨架化
     _, binary = cv2.threshold(mask, 10, 1, cv2.THRESH_BINARY)
