@@ -1,0 +1,220 @@
+[2026-01-28 23:17:17] Initialized TensorFieldGenerator: 850x857 (N=728450)
+[2026-01-28 23:17:17] solve_field_with_mask called. Stroke constraints: 158
+[2026-01-28 23:17:17] Found 10 contours in mask
+[2026-01-28 23:17:17] Added 4374 boundary constraints
+[2026-01-28 23:17:17] Saved debug_constraints.png
+[2026-01-28 23:17:17] solve_field called with 4532 constraints
+[2026-01-28 23:17:19] Applied first constraint at (321,89) idx=75971: vec=(-0.88,-0.47)
+[2026-01-28 23:18:45] Applied 4528 unique hard constraints
+[2026-01-28 23:21:14] Initialized TensorFieldGenerator: 850x857 (N=728450)
+[2026-01-28 23:21:14] solve_field_with_mask called. Stroke constraints: 2
+[2026-01-28 23:21:14] Found 10 contours in mask
+[2026-01-28 23:21:14] Added 4374 boundary constraints
+[2026-01-28 23:21:14] Saved debug_constraints.png
+[2026-01-28 23:21:14] solve_field called with 4376 constraints
+[2026-01-28 23:21:16] Applied first constraint at (425,424) idx=360825: vec=(-0.47,0.88)
+[2026-01-28 23:23:14] Applied 4372 unique hard constraints
+[2026-01-30 20:55:04] Initialized TensorFieldGenerator: 850x857 (N=728450)
+[2026-01-30 20:55:04] solve_field_with_mask called. Stroke constraints: 13
+[2026-01-30 20:55:04] Found 10 contours in mask
+[2026-01-30 20:55:04] Added 4374 boundary constraints
+[2026-01-30 20:55:04] Saved debug_constraints.png
+[2026-01-30 20:55:04] solve_field called with 4387 constraints
+[2026-01-30 20:55:07] Applied first constraint at (242,400) idx=340242: vec=(-0.81,0.59)
+[2026-01-30 20:57:10] Applied 4383 unique hard constraints
+[2026-01-30 21:03:39] Initialized TensorFieldGenerator: 850x857 (N=728450)
+[2026-01-30 21:03:39] solve_field_with_mask called. Stroke constraints: 113
+[2026-01-30 21:03:39] Found 10 contours in mask
+[2026-01-30 21:03:39] Added 4374 boundary constraints
+[2026-01-30 21:03:39] Appended 113 user constraints (High Priority)
+[2026-01-30 21:03:39] Saved debug_constraints.png
+[2026-01-30 21:03:39] solve_field called with 4487 constraints
+[2026-01-30 21:03:41] Applied first constraint at (272,197) idx=167722: vec=(-0.89,0.45)
+[2026-01-30 21:05:12] Applied 4483 unique hard constraints
+[2026-01-30 21:08:04] Initialized TensorFieldGenerator: 850x857 (N=728450)
+[2026-01-30 21:08:04] solve_field_with_mask called. Stroke constraints: 148
+[2026-01-30 21:08:04] Found 10 contours in mask
+[2026-01-30 21:08:04] Added 4374 boundary constraints
+[2026-01-30 21:08:04] Appended 148 user constraints (High Priority)
+[2026-01-30 21:08:04] Saved debug_constraints.png
+[2026-01-30 21:08:04] solve_field called with 4522 constraints
+[2026-01-30 21:08:06] Applied first constraint at (272,197) idx=167722: vec=(-0.89,0.45)
+[2026-01-30 21:10:03] Applied 4518 unique hard constraints
+[2026-01-30 21:16:05] Initialized TensorFieldGenerator: 850x857 (N=728450)
+[2026-01-30 21:16:05] solve_field_with_mask called. Stroke constraints: 144
+[2026-01-30 21:16:05] Found 10 contours in mask
+[2026-01-30 21:16:05] Added 4374 boundary constraints
+[2026-01-30 21:16:05] Appended 144 user constraints (expanded to ~3600 points)
+[2026-01-30 21:16:05] Saved debug_constraints.png
+[2026-01-30 21:16:05] solve_field called with 7974 constraints
+[2026-01-30 21:16:08] Applied first constraint at (272,197) idx=167722: vec=(-0.89,0.45)
+[2026-01-30 21:19:31] Applied 5302 unique hard constraints
+[2026-01-30 21:24:18] Initialized TensorFieldGenerator: 850x857 (N=728450)
+[2026-01-30 21:24:18] solve_field_with_mask called. Stroke constraints: 180
+[2026-01-30 21:24:18] Found 10 contours in mask
+[2026-01-30 21:24:18] Added 4211 boundary constraints
+[2026-01-30 21:24:18] Suppressed 163 boundary constraints due to user stroke proximity
+[2026-01-30 21:24:18] Appended 180 user constraints (expanded)
+[2026-01-30 21:24:18] Saved debug_constraints.png
+[2026-01-30 21:24:18] solve_field called with 8711 constraints
+[2026-01-30 21:24:20] Applied first constraint at (272,197) idx=167722: vec=(-0.89,0.45)
+[2026-01-30 21:26:31] Applied 5423 unique hard constraints
+[2026-01-30 23:11:47] Initialized TensorFieldGenerator: 850x857 (N=728450)
+[2026-01-30 23:11:47] solve_field_with_mask called. Stroke constraints: 484
+[2026-01-30 23:11:47] Found 10 contours in mask
+[2026-01-30 23:11:47] Added 3855 boundary constraints
+[2026-01-30 23:11:47] Suppressed 519 boundary constraints due to user stroke proximity
+[2026-01-30 23:11:47] Appended 484 user constraints (expanded)
+[2026-01-30 23:11:47] Saved debug_constraints.png
+[2026-01-30 23:11:47] solve_field called with 15955 constraints
+[2026-01-30 23:11:49] Applied first constraint at (272,197) idx=167722: vec=(-0.89,0.45)
+[2026-01-30 23:15:40] Applied 7203 unique hard constraints
+[2026-01-30 23:29:01] Initialized TensorFieldGenerator: 850x857 (N=728450)
+[2026-01-30 23:29:01] solve_field_with_mask called. Stroke constraints: 443
+[2026-01-30 23:29:01] Found 10 contours in mask
+[2026-01-30 23:29:01] Added 3867 boundary constraints
+[2026-01-30 23:29:01] Suppressed 507 boundary constraints due to user stroke proximity
+[2026-01-30 23:29:01] Appended 443 user constraints (expanded)
+[2026-01-30 23:29:01] Saved debug_constraints.png
+[2026-01-30 23:29:01] solve_field called with 14942 constraints
+[2026-01-30 23:29:03] Applied first constraint at (272,197) idx=167722: vec=(-0.89,0.45)
+[2026-01-30 23:32:35] Applied 7006 unique hard constraints
+[2026-02-01 23:36:32] Initialized TensorFieldGenerator: 850x857 (N=728450)
+[2026-02-01 23:36:32] solve_field_with_mask called. Stroke constraints: 305
+[2026-02-01 23:36:32] Found 6 contours in mask
+[2026-02-01 23:36:32] Added 3745 boundary constraints
+[2026-02-01 23:36:32] Suppressed 185 boundary constraints due to user stroke proximity
+[2026-02-01 23:36:32] Appended 305 user constraints (expanded)
+[2026-02-01 23:36:32] Saved debug_constraints.png
+[2026-02-01 23:36:32] solve_field called with 11370 constraints
+[2026-02-01 23:36:35] Applied first constraint at (88,95) idx=80838: vec=(0.00,1.00)
+[2026-02-01 23:41:55] Applied 5964 unique hard constraints
+[2026-02-02 21:58:01] Initialized TensorFieldGenerator: 850x857 (N=728450)
+[2026-02-02 21:58:01] solve_field_with_mask called. Stroke constraints: 160
+[2026-02-02 21:58:01] Found 6 contours in mask
+[2026-02-02 21:58:02] Added 3919 boundary constraints
+[2026-02-02 21:58:02] Suppressed 11 boundary constraints due to user stroke proximity
+[2026-02-02 21:58:02] Appended 160 user constraints (expanded)
+[2026-02-02 21:58:02] Saved debug_constraints.png
+[2026-02-02 21:58:02] solve_field called with 7919 constraints
+[2026-02-02 21:58:04] Applied first constraint at (88,95) idx=80838: vec=(0.00,1.00)
+[2026-02-02 22:01:23] Applied 4741 unique hard constraints
+[2026-02-03 00:52:40] Initialized TensorFieldGenerator: 850x857 (N=728450)
+[2026-02-03 00:52:40] solve_field_with_mask called. Stroke constraints: 34
+[2026-02-03 00:52:40] Found 6 contours in mask
+[2026-02-03 00:52:40] Added 3844 boundary constraints
+[2026-02-03 00:52:40] Suppressed 86 boundary constraints due to user stroke proximity
+[2026-02-03 00:52:40] Appended 34 user constraints (expanded)
+[2026-02-03 00:52:40] Saved debug_constraints.png
+[2026-02-03 00:52:40] solve_field called with 4694 constraints
+[2026-02-03 00:52:42] Applied first constraint at (88,95) idx=80838: vec=(0.00,1.00)
+[2026-02-03 00:54:29] Applied 4692 unique hard constraints
+[2026-02-03 02:13:27] Initialized TensorFieldGenerator: 850x857 (N=728450)
+[2026-02-03 02:13:27] solve_field_with_mask called. Stroke constraints: 358
+[2026-02-03 02:13:27] Found 6 contours in mask
+[2026-02-03 02:13:27] Added 2746 boundary constraints
+[2026-02-03 02:13:27] Suppressed 1184 boundary constraints due to user stroke proximity
+[2026-02-03 02:13:27] Appended 358 user constraints (expanded)
+[2026-02-03 02:13:27] Saved debug_constraints.png
+[2026-02-03 02:13:27] solve_field called with 11696 constraints
+[2026-02-03 02:13:29] Applied first constraint at (88,95) idx=80838: vec=(0.00,1.00)
+[2026-02-03 02:16:32] Applied 10299 unique hard constraints
+[2026-02-03 02:21:10] Initialized TensorFieldGenerator: 850x857 (N=728450)
+[2026-02-03 02:21:10] solve_field_with_mask called. Stroke constraints: 2
+[2026-02-03 02:21:10] Found 6 contours in mask
+[2026-02-03 02:21:10] Added 3809 boundary constraints
+[2026-02-03 02:21:10] Suppressed 121 boundary constraints due to user stroke proximity
+[2026-02-03 02:21:10] Appended 2 user constraints (expanded)
+[2026-02-03 02:21:10] Saved debug_constraints.png
+[2026-02-03 02:21:10] solve_field called with 3859 constraints
+[2026-02-03 02:21:13] Applied first constraint at (88,95) idx=80838: vec=(0.00,1.00)
+[2026-02-03 02:22:12] Applied 3857 unique hard constraints
+[2026-02-03 02:23:02] Initialized TensorFieldGenerator: 850x857 (N=728450)
+[2026-02-03 02:23:02] solve_field_with_mask called. Stroke constraints: 49
+[2026-02-03 02:23:02] Found 6 contours in mask
+[2026-02-03 02:23:02] Added 3585 boundary constraints
+[2026-02-03 02:23:02] Suppressed 345 boundary constraints due to user stroke proximity
+[2026-02-03 02:23:02] Appended 49 user constraints (expanded)
+[2026-02-03 02:23:02] Saved debug_constraints.png
+[2026-02-03 02:23:02] solve_field called with 4810 constraints
+[2026-02-03 02:23:04] Applied first constraint at (88,95) idx=80838: vec=(0.00,1.00)
+[2026-02-03 02:24:15] Applied 4795 unique hard constraints
+[2026-02-03 02:30:05] Initialized TensorFieldGenerator: 850x857 (N=728450)
+[2026-02-03 02:30:05] solve_field_with_mask called. Stroke constraints: 0
+[2026-02-03 02:30:05] Found 6 contours in mask
+[2026-02-03 02:30:05] Added 3930 boundary constraints
+[2026-02-03 02:30:05] Suppressed 0 boundary constraints due to user stroke proximity
+[2026-02-03 02:30:05] Appended 0 user constraints (expanded)
+[2026-02-03 02:30:05] Saved debug_constraints.png
+[2026-02-03 02:30:05] solve_field called with 3930 constraints
+[2026-02-03 02:30:07] Applied first constraint at (88,95) idx=80838: vec=(0.00,1.00)
+[2026-02-03 02:31:03] Applied 3928 unique hard constraints
+[2026-02-03 17:42:28] Initialized TensorFieldGenerator: 850x857 (N=728450)
+[2026-02-03 17:42:28] solve_field_with_mask called. Stroke constraints: 31
+[2026-02-03 17:42:28] Found 6 contours in mask
+[2026-02-03 17:42:28] Added 3799 boundary constraints
+[2026-02-03 17:42:28] Suppressed 131 boundary constraints due to user stroke proximity
+[2026-02-03 17:42:28] Appended 31 user constraints (expanded)
+[2026-02-03 17:42:28] Saved debug_constraints.png
+[2026-02-03 17:42:28] solve_field called with 4574 constraints
+[2026-02-03 17:42:31] Applied first constraint at (88,95) idx=80838: vec=(0.00,1.00)
+[2026-02-03 17:44:16] Applied 4572 unique hard constraints
+[2026-02-03 18:15:19] Initialized TensorFieldGenerator: 850x857 (N=728450)
+[2026-02-03 18:15:19] solve_field_with_mask called. Stroke constraints: 30
+[2026-02-03 18:15:19] Found 6 contours in mask
+[2026-02-03 18:15:19] Added 3765 boundary constraints
+[2026-02-03 18:15:19] Suppressed 165 boundary constraints due to user stroke proximity
+[2026-02-03 18:15:19] Appended 30 user constraints (expanded)
+[2026-02-03 18:15:19] Saved debug_constraints.png
+[2026-02-03 18:15:19] solve_field called with 4515 constraints
+[2026-02-03 18:15:22] Applied first constraint at (88,95) idx=80838: vec=(0.00,1.00)
+[2026-02-03 18:17:11] Applied 4513 unique hard constraints
+[2026-02-04 13:44:00] Initialized TensorFieldGenerator: 850x857 (N=728450)
+[2026-02-04 13:44:00] solve_field_with_mask called. Stroke constraints: 680
+[2026-02-04 13:44:00] Found 154 contours in mask
+[2026-02-04 13:44:00] Added 3924 boundary constraints
+[2026-02-04 13:44:00] Suppressed 677 boundary constraints due to user stroke proximity
+[2026-02-04 13:44:00] Appended 680 user constraints (expanded)
+[2026-02-04 13:44:00] Saved debug_constraints.png
+[2026-02-04 13:44:00] solve_field called with 20924 constraints
+[2026-02-04 13:44:02] Applied first constraint at (180,739) idx=628330: vec=(1.00,0.00)
+[2026-02-04 13:49:08] Applied 8397 unique hard constraints
+[2026-02-04 13:55:21] Initialized TensorFieldGenerator: 850x570 (N=484500)
+[2026-02-04 13:55:21] solve_field_with_mask called. Stroke constraints: 283
+[2026-02-04 13:55:21] Found 34 contours in mask
+[2026-02-04 13:55:21] Added 5245 boundary constraints
+[2026-02-04 13:55:21] Suppressed 465 boundary constraints due to user stroke proximity
+[2026-02-04 13:55:21] Appended 283 user constraints (expanded)
+[2026-02-04 13:55:21] Saved debug_constraints.png
+[2026-02-04 13:55:21] solve_field called with 12320 constraints
+[2026-02-04 13:55:23] Applied first constraint at (516,410) idx=349016: vec=(1.00,0.00)
+[2026-02-04 13:57:58] Applied 6674 unique hard constraints
+[2026-02-04 14:04:17] Initialized TensorFieldGenerator: 850x570 (N=484500)
+[2026-02-04 14:04:17] solve_field_with_mask called. Stroke constraints: 283
+[2026-02-04 14:04:17] Found 34 contours in mask
+[2026-02-04 14:04:17] Added 5245 boundary constraints
+[2026-02-04 14:04:17] Suppressed 465 boundary constraints due to user stroke proximity
+[2026-02-04 14:04:17] Appended 283 user constraints (expanded)
+[2026-02-04 14:04:17] Saved debug_constraints.png
+[2026-02-04 14:04:17] solve_field called with 12320 constraints
+[2026-02-04 14:04:18] Applied first constraint at (516,410) idx=349016: vec=(1.00,0.00)
+[2026-02-04 14:10:13] Initialized TensorFieldGenerator: 850x570 (N=484500)
+[2026-02-04 14:10:13] solve_field_with_mask called. Stroke constraints: 283
+[2026-02-04 14:10:13] Found 34 contours in mask
+[2026-02-04 14:10:13] Added 5245 boundary constraints
+[2026-02-04 14:10:13] Suppressed 465 boundary constraints due to user stroke proximity
+[2026-02-04 14:10:13] Appended 283 user constraints (expanded)
+[2026-02-04 14:10:13] Saved debug_constraints.png
+[2026-02-04 14:10:13] solve_field called with 12320 constraints
+[2026-02-04 14:10:15] Applied first constraint at (516,410) idx=349016: vec=(1.00,0.00)
+[2026-02-04 14:13:00] Applied 6674 unique hard constraints
+[2026-02-04 14:16:14] Initialized TensorFieldGenerator: 850x570 (N=484500)
+[2026-02-04 14:16:14] solve_field_with_mask called. Stroke constraints: 283
+[2026-02-04 14:16:14] Found 34 contours in mask
+[2026-02-04 14:16:14] Added 5245 boundary constraints
+[2026-02-04 14:16:14] Suppressed 465 boundary constraints due to user stroke proximity
+[2026-02-04 14:16:14] Appended 283 user constraints (expanded)
+[2026-02-04 14:16:14] Saved debug_constraints.png
+[2026-02-04 14:16:14] solve_field called with 12320 constraints
+[2026-02-04 14:16:15] Applied first constraint at (516,410) idx=349016: vec=(1.00,0.00)
+[2026-02-04 14:18:50] Applied 6674 unique hard constraints

@@ -1,0 +1,234 @@
+[2026-01-28 23:09:19] --- parse_gradio_sketch called ---
+[2026-01-28 23:09:19] Dict keys: ['background', 'layers', 'composite']
+[2026-01-28 23:09:19] Found 1 layers
+[2026-01-28 23:09:19] Layer 0 shape: (857, 850, 4)
+[2026-01-28 23:09:19] Processing layer 0, shape: (857, 850, 4), dtype: uint8
+[2026-01-28 23:09:19] Layer 0 max alpha: 255
+[2026-01-28 23:09:19] Combined alpha max value: 255
+[2026-01-28 23:09:19] Mask extracted from layers
+[2026-01-28 23:09:19] Skeleton points found: 834
+[2026-01-28 23:09:19] Total constraints generated: 834
+[2026-01-28 23:09:19] First constraint: (362, 90, -0.95314425, 0.30251622)
+[2026-01-28 23:17:17] --- parse_gradio_sketch called ---
+[2026-01-28 23:17:17] Dict keys: ['background', 'layers', 'composite']
+[2026-01-28 23:17:17] Found 1 layers
+[2026-01-28 23:17:17] Layer 0 shape: (857, 850, 4)
+[2026-01-28 23:17:17] Processing layer 0, shape: (857, 850, 4), dtype: uint8
+[2026-01-28 23:17:17] Layer 0 max alpha: 255
+[2026-01-28 23:17:17] Combined alpha max value: 255
+[2026-01-28 23:17:17] Mask extracted from layers
+[2026-01-28 23:17:17] Skeleton points found: 789
+[2026-01-28 23:17:17] Total constraints generated: 789
+[2026-01-28 23:17:17] First constraint: (321, 89, -0.8816746, -0.47185794)
+[2026-01-28 23:21:13] --- parse_gradio_sketch called ---
+[2026-01-28 23:21:13] Dict keys: ['background', 'layers', 'composite']
+[2026-01-28 23:21:13] Found 1 layers
+[2026-01-28 23:21:13] Layer 0 shape: (857, 850, 4)
+[2026-01-28 23:21:13] Processing layer 0, shape: (857, 850, 4), dtype: uint8
+[2026-01-28 23:21:13] Layer 0 max alpha: 0
+[2026-01-28 23:21:13] Combined alpha max value: 0
+[2026-01-28 23:21:13] Trying 'composite' key
+[2026-01-28 23:21:13] Mask extracted from composite
+[2026-01-28 23:21:14] Skeleton points found: 9
+[2026-01-28 23:21:14] Total constraints generated: 9
+[2026-01-28 23:21:14] First constraint: (425, 424, -0.47185794, 0.8816746)
+[2026-01-30 20:55:04] --- parse_gradio_sketch called ---
+[2026-01-30 20:55:04] Dict keys: ['background', 'layers', 'composite']
+[2026-01-30 20:55:04] Found 1 layers
+[2026-01-30 20:55:04] Layer 0 shape: (857, 850, 4)
+[2026-01-30 20:55:04] Processing layer 0, shape: (857, 850, 4), dtype: uint8
+[2026-01-30 20:55:04] Layer 0 max alpha: 255
+[2026-01-30 20:55:04] Combined alpha max value: 255
+[2026-01-30 20:55:04] Mask extracted from layers
+[2026-01-30 20:55:04] Skeleton points found: 62
+[2026-01-30 20:55:04] Total constraints generated: 62
+[2026-01-30 20:55:04] First constraint: (242, 400, -0.808087, 0.58906317)
+[2026-01-30 21:03:39] --- parse_gradio_sketch called ---
+[2026-01-30 21:03:39] Dict keys: ['background', 'layers', 'composite']
+[2026-01-30 21:03:39] Found 1 layers
+[2026-01-30 21:03:39] Layer 0 shape: (857, 850, 4)
+[2026-01-30 21:03:39] Processing layer 0, shape: (857, 850, 4), dtype: uint8
+[2026-01-30 21:03:39] Layer 0 max alpha: 255
+[2026-01-30 21:03:39] Combined alpha max value: 255
+[2026-01-30 21:03:39] Mask extracted from layers
+[2026-01-30 21:03:39] Skeleton points found: 113
+[2026-01-30 21:03:39] Total constraints generated: 113
+[2026-01-30 21:03:39] First constraint: (297, 237, -0.70710677, 0.70710677)
+[2026-01-30 21:08:04] --- parse_gradio_sketch called ---
+[2026-01-30 21:08:04] Dict keys: ['background', 'layers', 'composite']
+[2026-01-30 21:08:04] Found 1 layers
+[2026-01-30 21:08:04] Layer 0 shape: (857, 850, 4)
+[2026-01-30 21:08:04] Processing layer 0, shape: (857, 850, 4), dtype: uint8
+[2026-01-30 21:08:04] Layer 0 max alpha: 255
+[2026-01-30 21:08:04] Combined alpha max value: 255
+[2026-01-30 21:08:04] Mask extracted from layers
+[2026-01-30 21:08:04] Skeleton points found: 148
+[2026-01-30 21:08:04] Total constraints generated: 148
+[2026-01-30 21:08:04] First constraint: (242, 335, 0.47185794, 0.8816746)
+[2026-01-30 21:16:05] --- parse_gradio_sketch called ---
+[2026-01-30 21:16:05] Dict keys: ['background', 'layers', 'composite']
+[2026-01-30 21:16:05] Found 1 layers
+[2026-01-30 21:16:05] Layer 0 shape: (857, 850, 4)
+[2026-01-30 21:16:05] Processing layer 0, shape: (857, 850, 4), dtype: uint8
+[2026-01-30 21:16:05] Layer 0 max alpha: 255
+[2026-01-30 21:16:05] Combined alpha max value: 255
+[2026-01-30 21:16:05] Mask extracted from layers
+[2026-01-30 21:16:05] Skeleton points found: 144
+[2026-01-30 21:16:05] Total constraints generated: 144
+[2026-01-30 21:16:05] First constraint: (261, 316, 0.70710677, 0.70710677)
+[2026-01-30 21:24:18] --- parse_gradio_sketch called ---
+[2026-01-30 21:24:18] Dict keys: ['background', 'layers', 'composite']
+[2026-01-30 21:24:18] Found 1 layers
+[2026-01-30 21:24:18] Layer 0 shape: (857, 850, 4)
+[2026-01-30 21:24:18] Processing layer 0, shape: (857, 850, 4), dtype: uint8
+[2026-01-30 21:24:18] Layer 0 max alpha: 255
+[2026-01-30 21:24:18] Combined alpha max value: 255
+[2026-01-30 21:24:18] Mask extracted from layers
+[2026-01-30 21:24:18] Skeleton points found: 180
+[2026-01-30 21:24:18] Total constraints generated: 180
+[2026-01-30 21:24:18] First constraint: (258, 332, 0.47185794, 0.8816746)
+[2026-01-30 23:11:47] --- parse_gradio_sketch called ---
+[2026-01-30 23:11:47] Dict keys: ['background', 'layers', 'composite']
+[2026-01-30 23:11:47] Found 1 layers
+[2026-01-30 23:11:47] Layer 0 shape: (857, 850, 4)
+[2026-01-30 23:11:47] Processing layer 0, shape: (857, 850, 4), dtype: uint8
+[2026-01-30 23:11:47] Layer 0 max alpha: 255
+[2026-01-30 23:11:47] Combined alpha max value: 255
+[2026-01-30 23:11:47] Mask extracted from layers
+[2026-01-30 23:11:47] Skeleton points found: 484
+[2026-01-30 23:11:47] Total constraints generated: 484
+[2026-01-30 23:11:47] First constraint: (424, 120, 1.0, 0.0)
+[2026-01-30 23:29:01] --- parse_gradio_sketch called ---
+[2026-01-30 23:29:01] Dict keys: ['background', 'layers', 'composite']
+[2026-01-30 23:29:01] Found 1 layers
+[2026-01-30 23:29:01] Layer 0 shape: (857, 850, 4)
+[2026-01-30 23:29:01] Processing layer 0, shape: (857, 850, 4), dtype: uint8
+[2026-01-30 23:29:01] Layer 0 max alpha: 255
+[2026-01-30 23:29:01] Combined alpha max value: 255
+[2026-01-30 23:29:01] Mask extracted from layers
+[2026-01-30 23:29:01] Skeleton points found: 443
+[2026-01-30 23:29:01] Total constraints generated: 443
+[2026-01-30 23:29:01] First constraint: (433, 131, 1.0, 0.0)
+[2026-02-01 23:36:32] --- parse_gradio_sketch called ---
+[2026-02-01 23:36:32] Dict keys: ['background', 'layers', 'composite']
+[2026-02-01 23:36:32] Found 1 layers
+[2026-02-01 23:36:32] Layer 0 shape: (857, 850, 4)
+[2026-02-01 23:36:32] Processing layer 0, shape: (857, 850, 4), dtype: uint8
+[2026-02-01 23:36:32] Layer 0 max alpha: 255
+[2026-02-01 23:36:32] Combined alpha max value: 255
+[2026-02-01 23:36:32] Mask extracted from layers
+[2026-02-01 23:36:32] Skeleton points found: 305
+[2026-02-01 23:36:32] Total constraints generated: 305
+[2026-02-01 23:36:32] First constraint: (503, 199, 0.70710677, 0.70710677)
+[2026-02-02 21:58:01] --- parse_gradio_sketch called ---
+[2026-02-02 21:58:01] Dict keys: ['background', 'layers', 'composite']
+[2026-02-02 21:58:01] Found 1 layers
+[2026-02-02 21:58:01] Layer 0 shape: (857, 850, 4)
+[2026-02-02 21:58:01] Processing layer 0, shape: (857, 850, 4), dtype: uint8
+[2026-02-02 21:58:01] Layer 0 max alpha: 255
+[2026-02-02 21:58:01] Combined alpha max value: 255
+[2026-02-02 21:58:01] Mask extracted from layers
+[2026-02-02 21:58:01] Skeleton points found: 160
+[2026-02-02 21:58:01] Total constraints generated: 160
+[2026-02-02 21:58:01] First constraint: (314, 284, 0.0, 1.0)
+[2026-02-03 00:52:40] --- parse_gradio_sketch called (Optimized) ---
+[2026-02-03 00:52:40] Skeleton points found: 169
+[2026-02-03 00:52:40] Optimized constraints generated: 34
+[2026-02-03 02:13:27] --- parse_gradio_sketch called (Optimized) ---
+[2026-02-03 02:13:27] Skeleton points found: 1789
+[2026-02-03 02:13:27] Optimized constraints generated: 358
+[2026-02-03 02:21:10] --- parse_gradio_sketch called (Optimized) ---
+[2026-02-03 02:21:10] --- parse_gradio_sketch called (Optimized) ---
+[2026-02-03 02:21:10] Skeleton points found: 9
+[2026-02-03 02:21:10] Optimized constraints generated: 2
+[2026-02-03 02:23:02] --- parse_gradio_sketch called (Optimized) ---
+[2026-02-03 02:23:02] Skeleton points found: 241
+[2026-02-03 02:23:02] Optimized constraints generated: 49
+[2026-02-03 02:30:05] --- parse_gradio_sketch called (Optimized) ---
+[2026-02-03 02:30:05] Skeleton points found: 8
+[2026-02-03 02:30:05] Optimized constraints generated: 0
+[2026-02-03 17:42:28] --- parse_gradio_sketch called (Optimized) ---
+[2026-02-03 17:42:28] Skeleton points found: 151
+[2026-02-03 17:42:28] Optimized constraints generated: 31
+[2026-02-03 18:15:19] --- parse_gradio_sketch called (Smart Color Support) ---
+[2026-02-03 18:15:19] Layer 0 processed, max val: 255
+[2026-02-03 18:15:19] Mask extracted from layers
+[2026-02-03 18:15:19] Skeleton points found: 149
+[2026-02-03 18:15:19] Optimized constraints generated: 30
+[2026-02-04 13:43:59] --- parse_gradio_sketch called ---
+[2026-02-04 13:43:59] Dict keys: ['background', 'layers', 'composite']
+[2026-02-04 13:43:59] Found 1 layers
+[2026-02-04 13:43:59] Layer 0 shape: (857, 850, 4)
+[2026-02-04 13:43:59] Processing layer 0, shape: (857, 850, 4), dtype: uint8
+[2026-02-04 13:43:59] Layer 0 max alpha: 255
+[2026-02-04 13:43:59] Combined alpha max value: 255
+[2026-02-04 13:43:59] Mask extracted from layers
+[2026-02-04 13:43:59] Skeleton points found: 680
+[2026-02-04 13:44:00] Total constraints generated: 680
+[2026-02-04 13:44:00] First constraint: (403, 118, 1.0, 0.0)
+[2026-02-04 13:55:21] --- parse_gradio_sketch called ---
+[2026-02-04 13:55:21] Dict keys: ['background', 'layers', 'composite']
+[2026-02-04 13:55:21] Found 1 layers
+[2026-02-04 13:55:21] Layer 0 shape: (570, 850, 4)
+[2026-02-04 13:55:21] Processing layer 0, shape: (570, 850, 4), dtype: uint8
+[2026-02-04 13:55:21] Layer 0 max alpha: 0
+[2026-02-04 13:55:21] Combined alpha max value: 0
+[2026-02-04 13:55:21] Trying 'composite' key
+[2026-02-04 13:55:21] Mask extracted from composite
+[2026-02-04 13:55:21] Skeleton points found: 283
+[2026-02-04 13:55:21] Total constraints generated: 283
+[2026-02-04 13:55:21] First constraint: (285, 284, -0.9555698, 0.29476488)
+[2026-02-04 14:04:16] --- parse_gradio_sketch called ---
+[2026-02-04 14:04:16] Dict keys: ['background', 'layers', 'composite']
+[2026-02-04 14:04:16] Found 1 layers
+[2026-02-04 14:04:16] Layer 0 shape: (570, 850, 4)
+[2026-02-04 14:04:16] Processing layer 0, shape: (570, 850, 4), dtype: uint8
+[2026-02-04 14:04:16] Layer 0 max alpha: 0
+[2026-02-04 14:04:16] Combined alpha max value: 0
+[2026-02-04 14:04:16] Trying 'composite' key
+[2026-02-04 14:04:16] Mask extracted from composite
+[2026-02-04 14:04:17] Skeleton points found: 283
+[2026-02-04 14:04:17] Total constraints generated: 283
+[2026-02-04 14:04:17] First constraint: (285, 284, -0.9555698, 0.29476488)
+[2026-02-04 14:10:12] --- parse_gradio_sketch called ---
+[2026-02-04 14:10:12] Dict keys: ['background', 'layers', 'composite']
+[2026-02-04 14:10:12] Trying 'composite' key
+[2026-02-04 14:10:13] --- parse_gradio_sketch called ---
+[2026-02-04 14:10:13] Dict keys: ['background', 'layers', 'composite']
+[2026-02-04 14:10:13] Found 1 layers
+[2026-02-04 14:10:13] Layer 0 shape: (570, 850, 4)
+[2026-02-04 14:10:13] Processing layer 0, shape: (570, 850, 4), dtype: uint8
+[2026-02-04 14:10:13] Layer 0 max alpha: 0
+[2026-02-04 14:10:13] Combined alpha max value: 0
+[2026-02-04 14:10:13] Trying 'composite' key
+[2026-02-04 14:10:13] Mask extracted from composite
+[2026-02-04 14:10:13] Skeleton points found: 283
+[2026-02-04 14:10:13] Total constraints generated: 283
+[2026-02-04 14:10:13] First constraint: (285, 284, -0.9555698, 0.29476488)
+[2026-02-04 14:16:14] --- parse_gradio_sketch called ---
+[2026-02-04 14:16:14] Dict keys: ['background', 'layers', 'composite']
+[2026-02-04 14:16:14] Found 1 layers
+[2026-02-04 14:16:14] Layer 0 shape: (570, 850, 4)
+[2026-02-04 14:16:14] Processing layer 0, shape: (570, 850, 4), dtype: uint8
+[2026-02-04 14:16:14] Layer 0 max alpha: 0
+[2026-02-04 14:16:14] Combined alpha max value: 0
+[2026-02-04 14:16:14] Trying 'composite' key
+[2026-02-04 14:16:14] Mask extracted from composite
+[2026-02-04 14:16:14] Skeleton points found: 283
+[2026-02-04 14:16:14] Total constraints generated: 283
+[2026-02-04 14:16:14] First constraint: (285, 284, -0.9555698, 0.29476488)
+[2026-02-10 16:48:40] --- parse_gradio_sketch called ---
+[2026-02-10 16:48:40] Dict keys: ['layers']
+[2026-02-10 16:48:40] Found 1 layers
+[2026-02-10 16:48:53] --- parse_gradio_sketch called ---
+[2026-02-10 16:48:53] Dict keys: ['layers']
+[2026-02-10 16:48:53] Found 1 layers
+[2026-02-10 16:48:53] Layer 0 shape: (50, 50, 4)
+[2026-02-10 16:48:53] Processing layer 0, shape: (50, 50, 4), dtype: uint8
+[2026-02-10 16:48:53] Layer 0 max alpha: 255
+[2026-02-10 16:48:53] Combined alpha max value: 255
+[2026-02-10 16:48:53] Mask extracted from layers
+[2026-02-10 16:48:53] Mask image saved: debug_mask_layers_20260210_164853.png
+[2026-02-10 16:48:53] Skeleton points found: 23
+[2026-02-10 16:48:53] Total constraints generated: 23
+[2026-02-10 16:48:53] First constraint: (15, 14, -0.9555698, 0.29476488)
